@@ -1,0 +1,43 @@
+schema: spec-driven
+
+context: |
+  Argos: self-hosted HTTP API that exposes the Laya decision engine (pip `laya`,
+  https://laya.convaiinnovations.com/) for typed decisions (choice / score / yes-no) over text.
+  Public at argos.northernarchive.com.
+  Host: void-server, Raspberry Pi 4B arm64, 4 cores, 7.7 GB RAM, no GPU, shared with ~15
+  containers. Ingress/TLS/DNS conventions live in the pasta0126/infra repo (Traefik v3.7,
+  external `proxy` network, Let's Encrypt HTTP challenge, DNS records added by hand in cdmon).
+  Stack: Python 3.12, FastAPI + uvicorn on :8080, Docker Compose per app, secrets in
+  git-ignored .env (no `$` in values). Mirrors kaizen/server and nurk/server.
+  The user plans and discusses in Spanish.
+
+# Project context (optional)
+# Add only constraints that should guide OpenSpec artifacts and workflows.
+# Include constraints an agent cannot infer by reading the code.
+# Keep general project documentation and discoverable codebase facts out.
+# Example:
+#   context: |
+#     Designs and tasks must cover Windows, macOS, and Linux
+#     Write all artifacts in Spanish
+
+# Per-artifact rules (optional)
+# Add custom rules for specific artifacts.
+# Example:
+#   rules:
+#     proposal:
+#       - Keep proposals under 500 words
+#       - Always state what is out of scope
+#     tasks:
+#       - Break tasks into chunks of max 2 hours
+
+# Per-operation guidance (optional)
+# Add advisory guidance for how apply and archive work should be conducted.
+# This is separate from artifact rules above.
+# Example:
+#   operations:
+#     apply:
+#       guidance:
+#         - Keep test summaries concise
+#     archive:
+#       guidance:
+#         - Summarize the archive outcome before finishing

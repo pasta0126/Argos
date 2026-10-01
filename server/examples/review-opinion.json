@@ -1,0 +1,19 @@
+{
+  "text": "Me encanta, funciona perfecto y llegó en un día. Lo recomiendo.",
+  "questions": {
+    "opinion": {
+      "type": "choice",
+      "instructions": "¿Cuál es la opinión del cliente sobre el producto?",
+      "criteria": {
+        "positive": "contento, lo recomienda",
+        "neutral": "ni bien ni mal, cumple",
+        "negative": "descontento, se queja"
+      }
+    },
+    "rating": {
+      "type": "score",
+      "instructions": "¿Cómo valora el cliente el producto?",
+      "criteria": ["mal", "normal", "bien"]
+    }
+  }
+}

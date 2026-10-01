@@ -1,0 +1,5 @@
+fastapi~=0.115
+uvicorn[standard]~=0.34
+pydantic-settings~=2.7
+# Exact pin: Laya is 0.x and moves fast; upgrades are deliberate (re-run `pytest -m model`).
+laya==0.3.22

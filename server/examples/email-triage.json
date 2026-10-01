@@ -1,0 +1,20 @@
+{
+  "text": "Hola, ¿podemos vernos el jueves a las 10 para revisar el presupuesto del proyecto?",
+  "questions": {
+    "intent": {
+      "type": "choice",
+      "instructions": "¿Qué quiere el remitente del correo?",
+      "criteria": {
+        "meeting": "proponer o cambiar una reunión",
+        "invoice": "enviar o reclamar una factura",
+        "information": "pedir o compartir información",
+        "spam": "publicidad no solicitada"
+      }
+    },
+    "proposes_date": {
+      "type": "yesno",
+      "instructions": "¿Propone una fecha para reunirse?"
+    }
+  },
+  "min_confidence": 0.8
+}

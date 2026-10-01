@@ -1,0 +1,24 @@
+{
+  "text": "Me han cobrado dos veces este mes. Quiero un reembolso.",
+  "questions": {
+    "department": {
+      "type": "choice",
+      "instructions": "¿Qué departamento debe gestionarlo?",
+      "criteria": {
+        "billing": "pagos, facturas, reembolsos",
+        "technical": "errores, caídas, fallos técnicos",
+        "other": "todo lo demás"
+      }
+    },
+    "urgency": {
+      "type": "score",
+      "instructions": "¿Cómo de urgente es?",
+      "criteria": ["nada urgente", "pronto", "bloqueante"]
+    },
+    "refund": {
+      "type": "yesno",
+      "instructions": "¿Pide un reembolso?"
+    }
+  },
+  "min_confidence": 0.8
+}

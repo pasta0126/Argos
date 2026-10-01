@@ -1,0 +1,27 @@
+name: argos-api
+
+services:
+  argos-api:
+    build: .
+    image: argos-api:latest
+    container_name: argos-api
+    restart: unless-stopped
+    env_file: .env
+    mem_limit: 3g
+    volumes:
+      - argos-hf-cache:/data/hf
+    networks:
+      - proxy
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.argos-api.rule=Host(`argos.northernarchive.com`)
+      - traefik.http.routers.argos-api.entrypoints=websecure
+      - traefik.http.routers.argos-api.tls.certresolver=le
+      - traefik.http.services.argos-api.loadbalancer.server.port=8080
+
+volumes:
+  argos-hf-cache:
+
+networks:
+  proxy:
+    external: true

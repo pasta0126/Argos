@@ -1,0 +1,11 @@
+{
+  "text": "Eres un inútil, no vuelvas a escribir aquí.",
+  "questions": {
+    "offensive": {
+      "type": "yesno",
+      "instructions": "¿El comentario contiene insultos o ataques personales?",
+      "criteria": {"yes": "insulta o ataca a una persona", "no": "es respetuoso aunque critique"}
+    }
+  },
+  "min_confidence": 0.8
+}

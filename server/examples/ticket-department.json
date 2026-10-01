@@ -1,0 +1,15 @@
+{
+  "text": "Desde la última actualización la app se cierra al abrir el carrito.",
+  "questions": {
+    "department": {
+      "type": "choice",
+      "instructions": "¿Qué departamento debe gestionar este ticket?",
+      "criteria": {
+        "billing": "pagos, facturas, reembolsos",
+        "technical": "errores, caídas, fallos de la app",
+        "sales": "precios, planes, presupuestos",
+        "other": "todo lo demás"
+      }
+    }
+  }
+}

@@ -1,0 +1,432 @@
+{
+  "info": {
+    "name": "Argos API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Laya decision engine over HTTP. Set the `apiKey` collection variable (Bearer key). Swagger: https://argos.northernarchive.com/docs. Request bodies mirror server/examples/*.json; guide: server/TESTING.md."
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{apiKey}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "https://argos.northernarchive.com"
+    },
+    {
+      "key": "apiKey",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/health",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "health"
+          ]
+        },
+        "description": "Public. 200 when the model is loaded, 503 while loading (~65 s after start).",
+        "auth": {
+          "type": "noauth"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status 200', () => pm.response.to.have.status(200));",
+              "pm.test('status ok', () => pm.expect(pm.response.json().status).to.eql('ok'));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Ejemplos",
+      "item": [
+        {
+          "name": "Ticket: departamento (choice)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/decide",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "decide"
+              ]
+            },
+            "description": "Route a support ticket to a department.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"text\": \"Desde la última actualización la app se cierra al abrir el carrito.\",\n  \"questions\": {\n    \"department\": {\n      \"type\": \"choice\",\n      \"instructions\": \"¿Qué departamento debe gestionar este ticket?\",\n      \"criteria\": {\n        \"billing\": \"pagos, facturas, reembolsos\",\n        \"technical\": \"errores, caídas, fallos de la app\",\n        \"sales\": \"precios, planes, presupuestos\",\n        \"other\": \"todo lo demás\"\n      }\n    }\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "const a = pm.response.json().answers;",
+                  "pm.test('department.choice = \"technical\"', () => pm.expect(a.department.choice).to.eql(\"technical\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Ticket completo (choice + score + yesno)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/decide",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "decide"
+              ]
+            },
+            "description": "README example. urgency comes back low_confidence: true (0.62 < 0.8) on purpose.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"text\": \"Me han cobrado dos veces este mes. Quiero un reembolso.\",\n  \"questions\": {\n    \"department\": {\n      \"type\": \"choice\",\n      \"instructions\": \"¿Qué departamento debe gestionarlo?\",\n      \"criteria\": {\n        \"billing\": \"pagos, facturas, reembolsos\",\n        \"technical\": \"errores, caídas, fallos técnicos\",\n        \"other\": \"todo lo demás\"\n      }\n    },\n    \"urgency\": {\n      \"type\": \"score\",\n      \"instructions\": \"¿Cómo de urgente es?\",\n      \"criteria\": [\n        \"nada urgente\",\n        \"pronto\",\n        \"bloqueante\"\n      ]\n    },\n    \"refund\": {\n      \"type\": \"yesno\",\n      \"instructions\": \"¿Pide un reembolso?\"\n    }\n  },\n  \"min_confidence\": 0.8\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "const a = pm.response.json().answers;",
+                  "pm.test('department.choice = \"billing\"', () => pm.expect(a.department.choice).to.eql(\"billing\"));",
+                  "pm.test('urgency.level = \"bloqueante\"', () => pm.expect(a.urgency.level).to.eql(\"bloqueante\"));",
+                  "pm.test('refund.answer = true', () => pm.expect(a.refund.answer).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Reseña: opinión (choice + score)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/decide",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "decide"
+              ]
+            },
+            "description": "Prefer 3-level scores: 5-level star ratings are biased low (see TESTING.md).",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"text\": \"Me encanta, funciona perfecto y llegó en un día. Lo recomiendo.\",\n  \"questions\": {\n    \"opinion\": {\n      \"type\": \"choice\",\n      \"instructions\": \"¿Cuál es la opinión del cliente sobre el producto?\",\n      \"criteria\": {\n        \"positive\": \"contento, lo recomienda\",\n        \"neutral\": \"ni bien ni mal, cumple\",\n        \"negative\": \"descontento, se queja\"\n      }\n    },\n    \"rating\": {\n      \"type\": \"score\",\n      \"instructions\": \"¿Cómo valora el cliente el producto?\",\n      \"criteria\": [\n        \"mal\",\n        \"normal\",\n        \"bien\"\n      ]\n    }\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "const a = pm.response.json().answers;",
+                  "pm.test('opinion.choice = \"positive\"', () => pm.expect(a.opinion.choice).to.eql(\"positive\"));",
+                  "pm.test('rating.level = \"bien\"', () => pm.expect(a.rating.level).to.eql(\"bien\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Comentario: moderación (yesno)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/decide",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "decide"
+              ]
+            },
+            "description": "yesno with criteria describing each outcome.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"text\": \"Eres un inútil, no vuelvas a escribir aquí.\",\n  \"questions\": {\n    \"offensive\": {\n      \"type\": \"yesno\",\n      \"instructions\": \"¿El comentario contiene insultos o ataques personales?\",\n      \"criteria\": {\n        \"yes\": \"insulta o ataca a una persona\",\n        \"no\": \"es respetuoso aunque critique\"\n      }\n    }\n  },\n  \"min_confidence\": 0.8\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "const a = pm.response.json().answers;",
+                  "pm.test('offensive.answer = true', () => pm.expect(a.offensive.answer).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Correo: triaje (choice + yesno)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/decide",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "decide"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"text\": \"Hola, ¿podemos vernos el jueves a las 10 para revisar el presupuesto del proyecto?\",\n  \"questions\": {\n    \"intent\": {\n      \"type\": \"choice\",\n      \"instructions\": \"¿Qué quiere el remitente del correo?\",\n      \"criteria\": {\n        \"meeting\": \"proponer o cambiar una reunión\",\n        \"invoice\": \"enviar o reclamar una factura\",\n        \"information\": \"pedir o compartir información\",\n        \"spam\": \"publicidad no solicitada\"\n      }\n    },\n    \"proposes_date\": {\n      \"type\": \"yesno\",\n      \"instructions\": \"¿Propone una fecha para reunirse?\"\n    }\n  },\n  \"min_confidence\": 0.8\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "const a = pm.response.json().answers;",
+                  "pm.test('intent.choice = \"meeting\"', () => pm.expect(a.intent.choice).to.eql(\"meeting\"));",
+                  "pm.test('proposes_date.answer = true', () => pm.expect(a.proposes_date.answer).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Errores",
+      "item": [
+        {
+          "name": "401 sin API key",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/decide",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "decide"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"text\": \"hola\",\n  \"questions\": {\n    \"q\": {\n      \"type\": \"yesno\",\n      \"instructions\": \"¿Saluda?\"\n    }\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 401', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "422 tipo inválido",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/decide",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "decide"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"text\": \"hola\",\n  \"questions\": {\n    \"q\": {\n      \"type\": \"maybe\",\n      \"instructions\": \"¿Saluda?\"\n    }\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 422', () => pm.response.to.have.status(422));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "413 más de 10 preguntas",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/decide",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "decide"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"text\": \"hola\",\n  \"questions\": {\n    \"q0\": {\n      \"type\": \"yesno\",\n      \"instructions\": \"¿Saluda?\"\n    },\n    \"q1\": {\n      \"type\": \"yesno\",\n      \"instructions\": \"¿Saluda?\"\n    },\n    \"q2\": {\n      \"type\": \"yesno\",\n      \"instructions\": \"¿Saluda?\"\n    },\n    \"q3\": {\n      \"type\": \"yesno\",\n      \"instructions\": \"¿Saluda?\"\n    },\n    \"q4\": {\n      \"type\": \"yesno\",\n      \"instructions\": \"¿Saluda?\"\n    },\n    \"q5\": {\n      \"type\": \"yesno\",\n      \"instructions\": \"¿Saluda?\"\n    },\n    \"q6\": {\n      \"type\": \"yesno\",\n      \"instructions\": \"¿Saluda?\"\n    },\n    \"q7\": {\n      \"type\": \"yesno\",\n      \"instructions\": \"¿Saluda?\"\n    },\n    \"q8\": {\n      \"type\": \"yesno\",\n      \"instructions\": \"¿Saluda?\"\n    },\n    \"q9\": {\n      \"type\": \"yesno\",\n      \"instructions\": \"¿Saluda?\"\n    },\n    \"q10\": {\n      \"type\": \"yesno\",\n      \"instructions\": \"¿Saluda?\"\n    }\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 413', () => pm.response.to.have.status(413));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
