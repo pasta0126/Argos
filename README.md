@@ -34,7 +34,7 @@ Tu app / curl ──► argos-api (FastAPI + Laya) ◄── argos-web (wizard, 
 ## Montar la API
 
 ```bash
-git clone https://github.com/pasta0126/argos.git
+git clone https://github.com/pasta0126/Argos.git
 cd argos/server
 cp .env.example .env
 ```

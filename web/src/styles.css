@@ -1317,3 +1317,11 @@ a.brand {
   margin-top: auto;
   padding-top: 6px;
 }
+
+a.btn.github {
+  color: var(--text-2);
+}
+
+a.btn.github:hover {
+  color: var(--text);
+}

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
+import GitHubLink from './components/GitHubLink'
 import HealthBadge from './components/HealthBadge'
 import PayloadPanel from './components/PayloadPanel'
 import ResultView from './components/ResultView'
@@ -287,6 +288,7 @@ export default function App() {
               </button>
             </span>
           )}
+          <GitHubLink />
         </div>
       </header>
 
