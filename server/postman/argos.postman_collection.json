@@ -365,7 +365,7 @@
                 "exec": [
                   "pm.test('status 200', () => pm.response.to.have.status(200));",
                   "const p = pm.response.json().presets;",
-                  "pm.test('triage y guard', () => pm.expect(p).to.have.all.keys('triage', 'guard'));"
+                  "pm.test('los cinco presets', () => pm.expect(p).to.have.all.keys('triage', 'guard', 'email', 'moderation', 'router'));"
                 ]
               }
             }
@@ -461,6 +461,147 @@
                   "const d = pm.response.json(), a = d.answers;",
                   "pm.test('jailbreak.answer = true', () => pm.expect(a.jailbreak.answer).to.eql(true));",
                   "pm.test('prompt_injection.answer = true', () => pm.expect(a.prompt_injection.answer).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "email (correo técnico)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"text\": \"Asunto: Error en la integración\\nAl llamar a /api/orders recibimos un 401 aunque el token es válido. ¿Alguna idea?\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1/presets/email",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "presets",
+                "email"
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "const a = pm.response.json().answers;",
+                  "pm.test('category.choice = \"technical\"', () => pm.expect(a.category.choice).to.eql(\"technical\"));",
+                  "pm.test('5 respuestas', () => pm.expect(Object.keys(a)).to.have.lengthOf(5));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "moderation (comentario)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"text\": \"Pedro, cada comentario tuyo es más estúpido que el anterior. Deja de escribir.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1/presets/moderation",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "presets",
+                "moderation"
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "const a = pm.response.json().answers;",
+                  "pm.test('threat.answer = false', () => pm.expect(a.threat.answer).to.eql(false));",
+                  "pm.test('5 respuestas', () => pm.expect(Object.keys(a)).to.have.lengthOf(5));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "router (petición de código)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"text\": \"Refactoriza este módulo de 2.000 líneas para separar la lógica de negocio del acceso a datos y añade tests.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1/presets/router",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "presets",
+                "router"
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "const a = pm.response.json().answers;",
+                  "pm.test('domain.choice = \"code\"', () => pm.expect(a.domain.choice).to.eql(\"code\"));",
+                  "pm.test('4 respuestas', () => pm.expect(Object.keys(a)).to.have.lengthOf(4));"
                 ]
               }
             }

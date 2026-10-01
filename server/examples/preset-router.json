@@ -1,0 +1,3 @@
+{
+  "text": "Refactoriza este módulo de 2.000 líneas para separar la lógica de negocio del acceso a datos y añade tests."
+}

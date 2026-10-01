@@ -12,8 +12,9 @@ There is no UI beyond the auto-generated API docs:
 
 - **API reference with request/response examples for every endpoint** (Spanish):
   [`API.md`](API.md).
-- **Swagger UI:** <https://argos.northernarchive.com/docs> (**Authorize** → paste the key →
-  *Try it out*); OpenAPI schema at `/openapi.json`.
+- **Swagger UI:** <https://argos.northernarchive.com/docs> (**Authorize** → paste the key
+  alone, without "Bearer" → *Try it out*); OpenAPI schema at `/openapi.json`. The bearer
+  scheme is declared by `HTTPBearer(auto_error=False)` in `auth.py`; it does not change auth.
 - **Postman:** import [`postman/argos.postman_collection.json`](postman/argos.postman_collection.json)
   and set the `apiKey` collection variable. It has `/health`, the [`examples/`](examples/)
   requests with expected-result tests, the presets, and 401/404/422/413 cases. Headless:
@@ -71,10 +72,11 @@ loads or when 4 requests are already waiting behind the running one.
 ### Presets
 
 Ready-made Spanish question sets, so a caller only sends the text. Each preset has its own
-endpoint, `POST /v1/presets/triage` and `POST /v1/presets/guard`, listed in Swagger with its
-questions and a dropdown for `questions`. `GET /v1/presets` lists them with their questions
-in `/v1/decide` format (no inference; works while loading). The generic
-`POST /v1/presets/{name}` still works (`404` for an unknown name) but is hidden from Swagger.
+endpoint, listed in Swagger with its questions and a dropdown for `questions`:
+`POST /v1/presets/triage`, `/guard`, `/email`, `/moderation` and `/router`. `GET /v1/presets`
+lists them with their questions in `/v1/decide` format (no inference; works while loading).
+The generic `POST /v1/presets/{name}` still works (`404` for an unknown name) but is hidden
+from Swagger. Request/response examples for every preset: [`API.md`](API.md#endpoints-de-presets).
 
 ```bash
 curl -s https://argos.northernarchive.com/v1/presets/triage \
@@ -83,31 +85,46 @@ curl -s https://argos.northernarchive.com/v1/presets/triage \
 ```
 
 Body: `text`, optional `min_confidence`, optional `questions` (list of question names to
-answer only those). Latency on the Pi: `guard` ~3 s, `triage` ~5.5 s (the 6-option `intent`
-is the slow part). Response: the `/v1/decide` response plus `"preset": "triage"`. Errors as
+answer only those). A full preset takes 7–11 s on the Pi (6-option choices are the slow
+part); a subset is much faster. Response: the `/v1/decide` response plus `"preset"`. Errors as
 `/v1/decide`, plus `422` for a question name the preset does not have (`literal_error`
 listing the valid names).
 
-| preset | question | accuracy | balanced accuracy | "yes" texts detected |
-|---|---|---|---|---|
-| `triage` | `intent` (choice: refund, technical_help, billing_question, information, cancellation, other) | 13/14 | 83 % | — |
-| `triage` | `refund_requested` | 13/16 | 88 % | 4/4 |
-| `triage` | `churn_risk` | 14/14 | 100 % | 3/3 |
-| `guard` | `jailbreak` | 16/18 | 93 % | 3/3 |
-| `guard` | `prompt_injection` | 17/19 | 94 % | 3/3 |
-| `guard` | `sensitive_data` | 17/21 | 89 % | 3/3 |
+Measured accuracy per question (for maintainers; not a publication gate since
+`publish-all-presets`), 2026-10-01, model revision `55cf4c4e`, 86 labelled Spanish texts in
+`evals/presets.jsonl`. "Balanced" is the mean recall per expected answer, so a question that
+always answers "no" scores 50 %:
 
-Measured 2026-10-01 with model revision `55cf4c4e` on the labelled Spanish texts in
-`evals/presets.jsonl` (37 texts). The bar is 80 % balanced accuracy (mean recall per
-expected answer). Samples are small — 3–4 "yes" texts per question — so treat these as a
-sanity check, not a guarantee. Known false positives: `jailbreak` and `prompt_injection`
-fire on messages that only contain personal data; `sensitive_data` fires on jailbreak
-attempts; `refund_requested` fires on angry messages that do not ask for money.
-Laya's `email`, `moderation` and `router` presets and every score question (urgency,
-frustration, severity, difficulty) were evaluated and **not** published: they stayed under
-the bar in Spanish and in Laya's original English (details in
-`openspec/changes/archive/2026-10-01-add-decision-presets/design.md`, D8). `router.needs_tools`/`is_sensitive` reached 81 % plain accuracy only by
-answering "no" to almost everything.
+| preset | question | accuracy | balanced | per expected answer |
+|---|---|---|---|---|
+| `triage` | `churn_risk` | 14/14 | 100% | False:11/11 · True:3/3 |
+| `triage` | `frustration` | 5/16 | 29% | 0:1/6 · 1:0/3 · 2:4/4 · 3:0/3 |
+| `triage` | `intent` | 13/14 | 83% | billing_question:3/3 · cancellation:2/2 · information:2/2 · other:0/1 · refund:3/3 · technical_help:3/3 |
+| `triage` | `is_urgent` | 11/16 | 54% | False:10/12 · True:1/4 |
+| `triage` | `refund_requested` | 13/16 | 88% | False:9/12 · True:4/4 |
+| `guard` | `harm_severity` | 2/14 | 42% | 0:0/9 · 1:1/1 · 2:1/4 |
+| `guard` | `jailbreak` | 16/18 | 93% | False:13/15 · True:3/3 |
+| `guard` | `prompt_injection` | 17/19 | 94% | False:14/16 · True:3/3 |
+| `guard` | `sensitive_data` | 17/21 | 89% | False:14/18 · True:3/3 |
+| `guard` | `topic` | 4/10 | 42% | coding:2/2 · general_knowledge:1/2 · other:0/1 · personal_advice:0/1 · product_support:0/3 · security_testing:1/1 |
+| `email` | `category` | 10/17 | 66% | billing:2/2 · hr:1/2 · other:1/5 · sales:1/2 · security:3/4 · technical:2/2 |
+| `email` | `is_phishing` | 9/16 | 73% | False:6/13 · True:3/3 |
+| `email` | `is_spam` | 9/14 | 65% | False:7/11 · True:2/3 |
+| `email` | `needs_reply` | 9/14 | 65% | False:4/6 · True:5/8 |
+| `email` | `urgency` | 4/12 | 50% | 0:0/7 · 1:1/2 · 2:3/3 |
+| `moderation` | `harassment` | 10/15 | 53% | False:9/11 · True:1/4 |
+| `moderation` | `severity` | 2/12 | 25% | 0:0/4 · 1:0/2 · 2:2/2 · 3:0/4 |
+| `moderation` | `spam` | 10/15 | 67% | False:8/12 · True:2/3 |
+| `moderation` | `threat` | 11/15 | 46% | False:11/12 · True:0/3 |
+| `moderation` | `toxic` | 10/14 | 71% | False:7/7 · True:3/7 |
+| `router` | `difficulty` | 5/11 | 42% | 0:1/3 · 1:2/3 · 2:2/3 · 3:0/2 |
+| `router` | `domain` | 11/14 | 81% | chitchat:2/2 · code:2/3 · data_analysis:2/2 · factual_lookup:2/3 · math_or_logic:1/2 · writing:2/2 |
+| `router` | `is_sensitive` | 13/16 | 50% | False:13/13 · True:0/3 |
+| `router` | `needs_tools` | 13/16 | 50% | False:13/13 · True:0/3 |
+
+Each question uses the better of two Spanish wordings tried (archived `add-decision-presets`
+design, D8; choice in `publish-all-presets` design, D1). Samples are small (3–4 "yes" texts
+per yes/no question).
 
 ### `GET /health`
 
@@ -175,17 +192,17 @@ docker run --rm -u root --env-file .env -v $PWD/tests:/app/tests:ro -v $PWD/pyte
   sh -c 'pip install -q pytest~=8.3 pytest-asyncio~=0.24 httpx~=0.28 && su app -c "python -m pytest -m model -p no:cacheprovider"'
 ```
 
-Preset evaluation (real model). Run it after changing `argos_api/presets.py`, upgrading
-`laya` or changing `ARGOS_MODEL_REVISION`. It exits 1 if a published question is under 80 %
-balanced accuracy; `--misses` lists the tuning texts each question got wrong, and
-`--preset NAME` runs one preset:
+Preset evaluation report (real model). Run it after changing `argos_api/presets.py`, upgrading
+`laya` or changing `ARGOS_MODEL_REVISION`, and update the accuracy table above. It always exits
+0 and marks questions under 80 % balanced accuracy; `--misses` lists the tuning texts each
+question got wrong, and `--preset NAME` runs one preset:
 
 ```bash
 docker run --rm --env-file .env -v $PWD/argos_api:/app/argos_api:ro -v $PWD/evals:/app/evals:ro \
   -v argos-api_argos-hf-cache:/data/hf argos-api:latest python evals/run_presets.py
 ```
 
-It takes ~3 min. `tests/test_presets.py` checks that every label in `evals/presets.jsonl`
+It takes ~12 min. `tests/test_presets.py` checks that every label in `evals/presets.jsonl`
 matches a published question and that coverage holds (≥ 10 texts per question, ≥ 3 yes and
 ≥ 3 no per yesno, every choice option at least once). Lines with `"holdout": true` are not
 used for rewording; misses are only printed for the others.

@@ -45,3 +45,16 @@ async def test_removed_key_is_revoked_others_still_work(engine):
             other = await c.post("/v1/decide", json=triage_body(), headers={"Authorization": "Bearer cli-key-0123456789"})
     assert revoked.status_code == 401
     assert other.status_code == 200
+
+
+async def test_openapi_declares_bearer_scheme_on_v1_only(client):
+    schema = (await client.get("/openapi.json")).json()
+    schemes = schema["components"]["securitySchemes"]
+    assert any(s["type"] == "http" and s["scheme"] == "bearer" for s in schemes.values())
+    name = next(iter(schemes))
+    for path, ops in schema["paths"].items():
+        for op in ops.values():
+            if path.startswith("/v1/"):
+                assert {name: []} in op.get("security", []), path
+            else:
+                assert "security" not in op, path

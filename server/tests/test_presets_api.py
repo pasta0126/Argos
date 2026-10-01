@@ -177,3 +177,17 @@ async def test_per_preset_route_logs_preset_without_text(client, caplog):
     assert (await client.post("/v1/presets/guard", json={"text": secret}, headers=AUTH)).status_code == 200
     logged = "\n".join(rec.getMessage() for rec in caplog.records)
     assert "preset=guard" in logged and secret not in logged
+
+
+ALL_PRESETS = {"triage", "guard", "email", "moderation", "router"}
+
+
+async def test_all_five_presets_published(client):
+    assert set((await client.get("/v1/presets", headers=AUTH)).json()["presets"]) == ALL_PRESETS
+    paths = (await client.get("/openapi.json")).json()["paths"]
+    assert {p.rsplit("/", 1)[1] for p in paths if p.startswith("/v1/presets/")} == ALL_PRESETS
+
+
+async def test_triage_answers_all_five_questions(client):
+    r = await client.post("/v1/presets/triage", json={"text": TEXT}, headers=AUTH)
+    assert set(r.json()["answers"]) == {"intent", "is_urgent", "frustration", "refund_requested", "churn_risk"}

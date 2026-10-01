@@ -38,7 +38,8 @@ Elige el cliente que prefieras. Las tres opciones hacen la misma petición.
 ### Opción A — Swagger (navegador, sin instalar nada)
 
 1. Abre <https://argos.northernarchive.com/docs>.
-2. Pulsa **Authorize** (arriba a la derecha), pega la API key y confirma.
+2. Pulsa **Authorize** (arriba a la derecha), pega la API key **sola, sin escribir "Bearer"**,
+   pulsa **Authorize** y cierra el diálogo. Vale para todas las llamadas hasta que recargues.
 3. Despliega `POST /v1/decide` → **Try it out**.
 4. Pega en el cuerpo el contenido de [`examples/ticket-department.json`](examples/ticket-department.json) → **Execute**.
 
@@ -128,15 +129,17 @@ uno y cambia el texto o las preguntas para probar tus propios casos.
 
 ## 5. Presets: preguntas ya preparadas
 
-Para algunos casos frecuentes no hace falta escribir preguntas: cada preset tiene su propio
-endpoint y le envías solo el texto: `POST /v1/presets/triage` o `POST /v1/presets/guard`. En
-Swagger están en el grupo **presets**, con sus preguntas descritas. La lista completa está en
-`GET /v1/presets`.
+Para casos frecuentes no hace falta escribir preguntas: cada preset tiene su propio endpoint y
+le envías solo el texto. En Swagger están en el grupo **presets**, con sus preguntas descritas.
+La lista completa está en `GET /v1/presets`.
 
-| Preset | Para qué | Preguntas |
+| Endpoint | Para qué | Preguntas |
 |---|---|---|
-| `triage` | Mensajes de clientes | `intent` (refund, technical_help, billing_question, information, cancellation, other), `refund_requested`, `churn_risk` |
-| `guard` | Mensajes dirigidos a un asistente de IA | `jailbreak`, `prompt_injection`, `sensitive_data` |
+| `POST /v1/presets/triage` | Mensajes de clientes | `intent`, `is_urgent`, `frustration`, `refund_requested`, `churn_risk` |
+| `POST /v1/presets/guard` | Mensajes dirigidos a un asistente de IA | `jailbreak`, `prompt_injection`, `sensitive_data`, `harm_severity`, `topic` |
+| `POST /v1/presets/email` | Correos entrantes | `category`, `is_spam`, `is_phishing`, `urgency`, `needs_reply` |
+| `POST /v1/presets/moderation` | Comentarios de usuarios | `toxic`, `harassment`, `threat`, `spam`, `severity` |
+| `POST /v1/presets/router` | Peticiones a un modelo de lenguaje | `difficulty`, `domain`, `needs_tools`, `is_sensitive` |
 
 ```bash
 curl -s https://argos.northernarchive.com/v1/presets/triage \
@@ -147,16 +150,18 @@ curl -s https://argos.northernarchive.com/v1/presets/triage \
 
 | Archivo | Resultado esperado |
 |---|---|
-| `preset-triage.json` | `intent: refund` (0,997) · `refund_requested: true` (0,997) · `churn_risk: false` (0,68, **low_confidence**) |
-| `preset-guard.json` | `jailbreak: true` (0,98) · `prompt_injection: true` (0,96) · `sensitive_data: false` (0,71) |
+| `preset-triage.json` | `intent: refund` · `refund_requested: true` · `is_urgent: false` · `churn_risk: false` |
+| `preset-guard.json` | `jailbreak: true` · `prompt_injection: true` · `sensitive_data: false` |
+| `preset-email.json` | `category: billing` · `is_spam: false` · `is_phishing: false` |
+| `preset-moderation.json` | `toxic: true` · `harassment: true` · `threat: false` · `spam: false` |
+| `preset-router.json` | `domain: code` · `needs_tools: false` |
+
+Las respuestas completas, con probabilidades, están en [`API.md`](API.md#endpoints-de-presets).
 
 - La respuesta es igual que la de `/v1/decide`, con un campo `preset` añadido.
-- Para responder solo algunas preguntas: `"questions": ["jailbreak"]`. Es más rápido:
-  `triage` completo tarda ~5,5 s, `guard` ~3 s.
+- Un preset completo tarda 7–11 s. Para responder solo algunas preguntas usa
+  `"questions": ["jailbreak"]`: es bastante más rápido.
 - Una pregunta que el preset no tiene da `422` y el error lista las válidas.
-- Fallos conocidos: `jailbreak` y `prompt_injection` saltan con mensajes que solo contienen
-  datos personales; `refund_requested` salta con quejas que no piden dinero. Los aciertos
-  medidos están en el README; es una muestra pequeña.
 
 ## 6. Errores que deberías poder reproducir
 

@@ -14,7 +14,7 @@ Postman o Swagger.
 - [`GET /health`](#get-health): ¿está el servicio listo?
 - [`POST /v1/decide`](#post-v1decide): responder tus propias preguntas sobre un texto
 - [`GET /v1/presets`](#get-v1presets): ver los conjuntos de preguntas ya preparados
-- [`POST /v1/presets/triage` y `POST /v1/presets/guard`](#post-v1presetstriage-y-post-v1presetsguard): usar un conjunto preparado
+- [Endpoints de presets](#endpoints-de-presets): `POST /v1/presets/triage`, `/guard`, `/email`, `/moderation`, `/router`
 - [Errores](#errores)
 - [Escribir buenas preguntas](#escribir-buenas-preguntas)
 
@@ -25,7 +25,7 @@ Postman o Swagger.
 | URL base | `https://argos.northernarchive.com` |
 | Formato | JSON en la petición (`Content-Type: application/json`) y en la respuesta |
 | Autenticación | Cabecera `Authorization: Bearer <api-key>` en todos los `/v1/*`. `/health` es público |
-| Documentación interactiva | Swagger en [`/docs`](https://argos.northernarchive.com/docs) (botón **Authorize** para la clave) |
+| Documentación interactiva | Swagger en [`/docs`](https://argos.northernarchive.com/docs): botón **Authorize**, pega la clave sola (sin "Bearer") y usa *Try it out* |
 | Tiempo de respuesta | ~1–1,5 s por pregunta en la Raspberry Pi del servidor |
 | Concurrencia | Una inferencia a la vez; hasta 4 peticiones esperan turno, la siguiente recibe `503` |
 
@@ -34,8 +34,11 @@ Postman o Swagger.
 | `GET` | `/health` | Dice si el modelo está cargado | No |
 | `POST` | `/v1/decide` | Responde las preguntas que tú escribes sobre un texto | Sí |
 | `GET` | `/v1/presets` | Lista los conjuntos de preguntas preparados | No |
-| `POST` | `/v1/presets/triage` | Responde el preset `triage` (mensajes de clientes) sobre un texto | Sí |
-| `POST` | `/v1/presets/guard` | Responde el preset `guard` (mensajes a un asistente de IA) sobre un texto | Sí |
+| `POST` | `/v1/presets/triage` | Preset `triage`: mensajes de clientes | Sí |
+| `POST` | `/v1/presets/guard` | Preset `guard`: mensajes dirigidos a un asistente de IA | Sí |
+| `POST` | `/v1/presets/email` | Preset `email`: correos entrantes | Sí |
+| `POST` | `/v1/presets/moderation` | Preset `moderation`: comentarios de usuarios | Sí |
+| `POST` | `/v1/presets/router` | Preset `router`: peticiones a un modelo de lenguaje | Sí |
 
 Ejemplo con curl (el resto de ejemplos solo muestran el cuerpo JSON):
 
@@ -372,8 +375,11 @@ modificarlas y enviarlas allí.
     },
     "guard": {
       "description": "Filtro de entrada para asistentes de IA: jailbreak, inyección de instrucciones y datos sensibles.",
-      "questions": {"jailbreak": {"...": "..."}, "prompt_injection": {"...": "..."}, "sensitive_data": {"...": "..."}}
-    }
+      "questions": {"jailbreak": {"...": "..."}, "prompt_injection": {"...": "..."}, "...": "..."}
+    },
+    "email": {"...": "..."},
+    "moderation": {"...": "..."},
+    "router": {"...": "..."}
   }
 }
 ```
@@ -382,25 +388,31 @@ modificarlas y enviarlas allí.
 
 | Preset | Para qué | Preguntas (tipo) |
 |---|---|---|
-| `triage` | Mensajes de clientes | `intent` (choice: `refund`, `technical_help`, `billing_question`, `information`, `cancellation`, `other`) · `refund_requested` (yesno) · `churn_risk` (yesno) |
-| `guard` | Mensajes dirigidos a un asistente de IA | `jailbreak` (yesno): intenta saltarse las normas · `prompt_injection` (yesno): da órdenes al sistema · `sensitive_data` (yesno): contiene contraseñas o datos personales |
-
-Cada pregunta publicada ha acertado al menos el 80 % (exactitud equilibrada) en un conjunto
-pequeño de textos en español etiquetados (3–4 casos "sí" por pregunta). Los números y los
-presets descartados (`email`, `moderation`, `router`, escalas) están en el
-[README](README.md#presets).
+| `triage` | Mensajes de clientes | `intent` (choice: `refund`, `technical_help`, `billing_question`, `information`, `cancellation`, `other`) · `is_urgent` (yesno) · `frustration` (score, 4 niveles) · `refund_requested` (yesno) · `churn_risk` (yesno) |
+| `guard` | Mensajes dirigidos a un asistente de IA | `jailbreak` (yesno) · `prompt_injection` (yesno) · `sensitive_data` (yesno) · `harm_severity` (score, 3 niveles) · `topic` (choice: `product_support`, `coding`, `general_knowledge`, `personal_advice`, `security_testing`, `other`) |
+| `email` | Correos entrantes | `category` (choice: `billing`, `technical`, `sales`, `security`, `hr`, `other`) · `is_spam` (yesno) · `is_phishing` (yesno) · `urgency` (score, 3 niveles) · `needs_reply` (yesno) |
+| `moderation` | Comentarios de usuarios | `toxic` (yesno) · `harassment` (yesno) · `threat` (yesno) · `spam` (yesno) · `severity` (score, 4 niveles) |
+| `router` | Peticiones a un modelo de lenguaje | `difficulty` (score, 4 niveles) · `domain` (choice: `code`, `math_or_logic`, `writing`, `factual_lookup`, `data_analysis`, `chitchat`) · `needs_tools` (yesno) · `is_sensitive` (yesno) |
 
 ---
 
-## `POST /v1/presets/triage` y `POST /v1/presets/guard`
+## Endpoints de presets
 
-Cada preset tiene su propio endpoint: responde las preguntas de ese preset sobre un texto. Es
-como `/v1/decide` pero sin escribir las preguntas. En Swagger aparecen en el grupo
-**presets**, con la lista de preguntas y un desplegable para el campo `questions`.
+Cada preset tiene su propio endpoint, que responde sus preguntas sobre un texto: es como
+`/v1/decide` pero sin escribir las preguntas. En Swagger aparecen en el grupo **presets**, con
+la lista de preguntas y un desplegable para el campo `questions`.
 
-Los dos funcionan igual; solo cambian las preguntas (tabla de [presets
-disponibles](#presets-disponibles)). Si un preset nuevo se publica en el futuro, tendrá su
-propio `POST /v1/presets/<nombre>`.
+| Endpoint | Preguntas | Tiempo (preset completo) |
+|---|---|---|
+| `POST /v1/presets/triage` | 5 | ~10 s |
+| `POST /v1/presets/guard` | 5 | ~11 s |
+| `POST /v1/presets/email` | 5 | ~8 s |
+| `POST /v1/presets/moderation` | 5 | ~7 s |
+| `POST /v1/presets/router` | 4 | ~7 s |
+
+Todos funcionan igual; solo cambian las preguntas (tabla de [presets
+disponibles](#presets-disponibles)). Si solo necesitas alguna pregunta, pásala en `questions`:
+la llamada tarda bastante menos.
 
 > **Ruta genérica.** `POST /v1/presets/{name}` (con el nombre como variable) sigue
 > funcionando para clientes que construyen la URL a partir de un dato, pero no aparece en
@@ -418,7 +430,7 @@ propio `POST /v1/presets/<nombre>`.
 
 Igual que la de `/v1/decide` más el campo `preset` con el nombre del preset.
 
-### Ejemplo 1: `triage` completo
+### Ejemplo 1: `triage`
 
 [`examples/preset-triage.json`](examples/preset-triage.json) → `POST /v1/presets/triage`
 
@@ -434,23 +446,28 @@ Igual que la de `/v1/decide` más el campo `preset` con el nombre del preset.
   "answers": {
     "intent": {
       "choice": "refund",
-      "probabilities": {
-        "refund": 0.9969, "technical_help": 0.0001, "billing_question": 0.0021,
-        "information": 0.0001, "cancellation": 0.0003, "other": 0.0006
-      },
+      "probabilities": {"refund": 0.9969, "technical_help": 0.0001, "billing_question": 0.0021, "information": 0.0001, "cancellation": 0.0003, "other": 0.0006},
       "confidence": 0.9969,
       "low_confidence": false
+    },
+    "is_urgent": {"probability": 0.1961, "answer": false, "confidence": 0.8039, "low_confidence": false},
+    "frustration": {
+      "score": 2.5466,
+      "level": "muy enfadado o con lenguaje fuerte",
+      "probabilities": [0.021, 0.0779, 0.2345, 0.6665],
+      "confidence": 0.6665,
+      "low_confidence": true
     },
     "refund_requested": {"probability": 0.9966, "answer": true, "confidence": 0.9966, "low_confidence": false},
     "churn_risk": {"probability": 0.3208, "answer": false, "confidence": 0.6792, "low_confidence": true}
   },
   "model": "laya-multilingual",
-  "latency_ms": 5517,
+  "latency_ms": 9630,
   "preset": "triage"
 }
 ```
 
-### Ejemplo 2: `guard` completo
+### Ejemplo 2: `guard`
 
 [`examples/preset-guard.json`](examples/preset-guard.json) → `POST /v1/presets/guard`
 
@@ -465,22 +482,135 @@ Igual que la de `/v1/decide` más el campo `preset` con el nombre del preset.
   "answers": {
     "jailbreak": {"probability": 0.9825, "answer": true, "confidence": 0.9825},
     "prompt_injection": {"probability": 0.9571, "answer": true, "confidence": 0.9571},
-    "sensitive_data": {"probability": 0.2869, "answer": false, "confidence": 0.7131}
+    "sensitive_data": {"probability": 0.2869, "answer": false, "confidence": 0.7131},
+    "harm_severity": {
+      "score": 0.9831,
+      "level": "algo inapropiado",
+      "probabilities": [0.1101, 0.7967, 0.0932],
+      "confidence": 0.7967
+    },
+    "topic": {
+      "choice": "coding",
+      "probabilities": {"product_support": 0.0133, "coding": 0.9454, "general_knowledge": 0.0006, "personal_advice": 0.0009, "security_testing": 0.0336, "other": 0.0063},
+      "confidence": 0.9454
+    }
   },
   "model": "laya-multilingual",
-  "latency_ms": 3013,
+  "latency_ms": 10867,
   "preset": "guard"
 }
 ```
 
-### Ejemplo 3: solo algunas preguntas
+### Ejemplo 3: `email`
 
-[`examples/preset-guard-subset.json`](examples/preset-guard-subset.json) → `POST /v1/presets/guard`
+[`examples/preset-email.json`](examples/preset-email.json) → `POST /v1/presets/email`
+
+```json
+{
+  "text": "Asunto: Factura 2024-118\nAdjunto la factura de septiembre. El pago vence el día 30."
+}
+```
+
+```json
+{
+  "answers": {
+    "category": {
+      "choice": "billing",
+      "probabilities": {"billing": 1.0, "technical": 0.0, "sales": 0.0, "security": 0.0, "hr": 0.0, "other": 0.0},
+      "confidence": 1.0
+    },
+    "is_spam": {"probability": 0.0, "answer": false, "confidence": 1.0},
+    "is_phishing": {"probability": 0.0069, "answer": false, "confidence": 0.9931},
+    "urgency": {
+      "score": 1.8585,
+      "level": "bloqueante o con plazo inminente",
+      "probabilities": [0.0093, 0.1229, 0.8678],
+      "confidence": 0.8678
+    },
+    "needs_reply": {"probability": 0.1961, "answer": false, "confidence": 0.8039}
+  },
+  "model": "laya-multilingual",
+  "latency_ms": 7902,
+  "preset": "email"
+}
+```
+
+### Ejemplo 4: `moderation`
+
+[`examples/preset-moderation.json`](examples/preset-moderation.json) → `POST /v1/presets/moderation`
+
+```json
+{
+  "text": "Eres un idiota, Juan, nadie te soporta."
+}
+```
+
+```json
+{
+  "answers": {
+    "toxic": {"probability": 0.8673, "answer": true, "confidence": 0.8673},
+    "harassment": {"probability": 0.9283, "answer": true, "confidence": 0.9283},
+    "threat": {"probability": 0.0124, "answer": false, "confidence": 0.9876},
+    "spam": {"probability": 0.0131, "answer": false, "confidence": 0.9869},
+    "severity": {
+      "score": 2.0123,
+      "level": "clara: insultos, acoso o spam dirigido a alguien",
+      "probabilities": [0.0231, 0.1077, 0.7028, 0.1664],
+      "confidence": 0.7028
+    }
+  },
+  "model": "laya-multilingual",
+  "latency_ms": 6714,
+  "preset": "moderation"
+}
+```
+
+### Ejemplo 5: `router`
+
+[`examples/preset-router.json`](examples/preset-router.json) → `POST /v1/presets/router`
+
+```json
+{
+  "text": "Refactoriza este módulo de 2.000 líneas para separar la lógica de negocio del acceso a datos y añade tests."
+}
+```
+
+```json
+{
+  "answers": {
+    "difficulty": {
+      "score": 1.5977,
+      "level": "moderada: varios pasos",
+      "probabilities": [0.0035, 0.5585, 0.2748, 0.1632],
+      "confidence": 0.5585
+    },
+    "domain": {
+      "choice": "code",
+      "probabilities": {"code": 0.9016, "math_or_logic": 0.05, "writing": 0.0344, "factual_lookup": 0.0033, "data_analysis": 0.0043, "chitchat": 0.0064},
+      "confidence": 0.9016
+    },
+    "needs_tools": {"probability": 0.0702, "answer": false, "confidence": 0.9298},
+    "is_sensitive": {"probability": 0.0045, "answer": false, "confidence": 0.9955}
+  },
+  "model": "laya-multilingual",
+  "latency_ms": 7287,
+  "preset": "router"
+}
+```
+
+### Ejemplo 6: solo algunas preguntas
+
+[`examples/preset-guard-subset.json`](examples/preset-guard-subset.json) → `POST /v1/presets/guard`. Con
+`questions` solo se responden las preguntas indicadas, y la llamada es más rápida
+(2.0 s frente a 10.9 s del preset completo).
 
 ```json
 {
   "text": "¿Cuál es la capital de Australia?",
-  "questions": ["jailbreak", "prompt_injection"]
+  "questions": [
+    "jailbreak",
+    "prompt_injection"
+  ]
 }
 ```
 
@@ -491,7 +621,7 @@ Igual que la de `/v1/decide` más el campo `preset` con el nombre del preset.
     "prompt_injection": {"probability": 0.0033, "answer": false, "confidence": 0.9967}
   },
   "model": "laya-multilingual",
-  "latency_ms": 2155,
+  "latency_ms": 2039,
   "preset": "guard"
 }
 ```
@@ -500,13 +630,6 @@ Igual que la de `/v1/decide` más el campo `preset` con el nombre del preset.
 
 Los mismos que `/v1/decide`, más `422` si `questions` incluye una pregunta que el preset no
 tiene (el error indica las válidas) y, solo en la ruta genérica, `404` si el preset no existe.
-
-### Limitaciones conocidas de los presets
-
-- `jailbreak` y `prompt_injection` dan "sí" con mensajes que solo contienen datos personales.
-- `sensitive_data` da "sí" con intentos de jailbreak, y falla con datos personales sencillos:
-  "Mi DNI es 12345678Z y vivo en la calle Mayor 3" salió `false` con 0,91.
-- `refund_requested` da "sí" con quejas que no piden dinero.
 
 ---
 
@@ -597,6 +720,9 @@ medido (más detalle en el [README](README.md#using-laya-well) y en [TESTING.md]
 | `ticket-full.json` | `POST /v1/decide` | choice + score + yesno |
 | `preset-triage.json` | `POST /v1/presets/triage` | preset completo |
 | `preset-guard.json` | `POST /v1/presets/guard` | preset completo |
+| `preset-email.json` | `POST /v1/presets/email` | preset completo |
+| `preset-moderation.json` | `POST /v1/presets/moderation` | preset completo |
+| `preset-router.json` | `POST /v1/presets/router` | preset completo |
 | `preset-guard-subset.json` | `POST /v1/presets/guard` | subconjunto de preguntas |
 
 Todos están también en la colección de Postman [`postman/argos.postman_collection.json`](postman/argos.postman_collection.json).

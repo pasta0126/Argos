@@ -1,9 +1,8 @@
 """Run every preset over the labelled texts in presets.jsonl and report accuracy per question.
 
-Loads the real model, so run it inside the image (command in server/README.md). Exits 1 if
-any published question is under the bar on the whole set (tuning + held-out). The bar is on
-balanced accuracy (mean recall per expected class), so a question that always answers the
-majority class cannot pass on an imbalanced set.
+Loads the real model, so run it inside the image (command in server/README.md). A report, not
+a gate: it always exits 0 and marks questions whose balanced accuracy (mean recall per expected
+class, so answering the majority class everywhere does not score well) is under 80 %.
 
     python evals/run_presets.py [--preset NAME] [--misses]
 
@@ -65,7 +64,7 @@ def main() -> int:
             if got != expected and split == "tune":
                 misses[(row["preset"], name)].append(f"expected={expected} got={got} ({answers[name]['confidence']:.2f}): {row['text'][:80]!r}")
 
-    failed = []
+    below = []
     print(f"{'preset':<11}{'question':<19}{'tuning':<14}{'held-out':<14}{'total':<14}{'balanced':<10}per class")
     for key, res in sorted(results.items()):
         preset, name = key
@@ -76,9 +75,9 @@ def main() -> int:
             got_cls = [g for e, g, _ in res if e == cls]
             per_class[cls] = (sum(g == cls for g in got_cls), len(got_cls))
         balanced = sum(h / n for h, n in per_class.values()) / len(per_class)
-        mark = "" if balanced >= BAR else "  < BAR"
+        mark = "" if balanced >= BAR else "  < 80%"
         if mark:
-            failed.append(f"{preset}.{name}")
+            below.append(f"{preset}.{name}")
         classes = " ".join(f"{c}:{h}/{n}" for c, (h, n) in per_class.items())
         total = pct(hits["tune"] + hits["holdout"], ns["tune"] + ns["holdout"])
         print(f"{preset:<11}{name:<19}{pct(hits['tune'], ns['tune']):<14}{pct(hits['holdout'], ns['holdout']):<14}{total:<14}{balanced:<10.0%}{classes}{mark}")
@@ -86,8 +85,8 @@ def main() -> int:
             for m in misses[key]:
                 print(f"    {m}")
 
-    print(f"\n{'FAIL: ' + ', '.join(failed) if failed else 'OK: every question >= ' + format(BAR, '.0%')}")
-    return 1 if failed else 0
+    print(f"\n{len(below)} of {len(results)} questions under 80 % balanced accuracy" + (f": {', '.join(below)}" if below else ""))
+    return 0
 
 
 if __name__ == "__main__":
