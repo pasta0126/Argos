@@ -2,9 +2,7 @@ name: argos-web
 
 services:
   argos-web:
-    build:
-      context: ..
-      dockerfile: web/Dockerfile
+    build: .
     image: argos-web:latest
     container_name: argos-web
     restart: unless-stopped

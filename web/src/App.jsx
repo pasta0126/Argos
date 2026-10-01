@@ -102,6 +102,13 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
+  // Logo and title: back to the start (mode step, or the key step without a key). The draft is kept.
+  const goHome = () => {
+    if (run.phase === 'running' || run.phase === 'waiting') abortRef.current?.abort()
+    setRun(IDLE)
+    go(key ? stepIndex('mode') : 0)
+  }
+
   const next = () => {
     const k = STEPS[step].key
     if (errorsOf(k).length) {
@@ -257,12 +264,19 @@ export default function App() {
     <>
       <header className="topbar">
         <div className="topbar-inner">
-          <div className="brand">
-            <img src="/favicon.svg" alt="" />
+          <a
+            href="/"
+            className="brand"
+            onClick={(e) => {
+              e.preventDefault()
+              goHome()
+            }}
+          >
+            <img src="/logo.png" alt="" width="36" height="36" />
             <div>
               <strong>Argos</strong> <span>asistente de decisiones</span>
             </div>
-          </div>
+          </a>
           <HealthBadge health={health} />
           {key && (
             <span className="chip">

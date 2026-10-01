@@ -13,8 +13,6 @@ export default defineConfig({
       '/v1': { target: API, changeOrigin: true },
       '/health': { target: API, changeOrigin: true },
     },
-    // The examples are imported from ../server/examples.
-    fs: { allow: ['..'] },
   },
   test: {
     environment: 'node',

@@ -1,6 +1,10 @@
 import { describe, expect, test } from 'vitest'
 import { buildRequest, draftFromBody, emptyDraft, expectedSeconds, freeName, newOption, newQuestion, optionCounts, questionsFromApi } from './draft'
-import { EXAMPLES } from './examples'
+
+// server/examples holds valid /v1/decide bodies (Postman/tests); the editor must round-trip them.
+const EXAMPLES = Object.entries(import.meta.glob('../../../server/examples/*.json', { eager: true, import: 'default' }))
+  .map(([path, body]) => ({ id: path.split('/').pop().replace(/\.json$/, ''), body }))
+  .filter((e) => e.body.questions && !Array.isArray(e.body.questions))
 import fixture from './fixtures/presets.json'
 
 const presetDraft = (name, subset) => {
@@ -64,10 +68,8 @@ describe('buildRequest, custom mode', () => {
 })
 
 describe('round trip', () => {
-  test('there are bundled examples, preset files excluded', () => {
+  test('server examples are found', () => {
     expect(EXAMPLES.length).toBeGreaterThanOrEqual(5)
-    expect(EXAMPLES.some((e) => e.id.startsWith('preset-'))).toBe(false)
-    expect(EXAMPLES[0].id).toBe('ticket-full')
   })
 
   test.each(EXAMPLES.map((e) => [e.id, e.body]))('example %s', (_id, body) => {
@@ -79,7 +81,7 @@ describe('round trip', () => {
     expect(buildRequest(draft).body.questions).toEqual(preset.questions)
   })
 
-  test('ticket completo example loads text, three questions and 0.8', () => {
+  test('ticket-full example loads text, three questions and 0.8', () => {
     const d = draftFromBody(EXAMPLES.find((e) => e.id === 'ticket-full').body)
     expect(d.mode).toBe('custom')
     expect(d.text).toMatch(/cobrado dos veces/)

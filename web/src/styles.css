@@ -1274,3 +1274,46 @@ textarea.invalid {
   padding: 0;
   min-width: 3px;
 }
+
+/* Mode step: custom + 5 presets in 2 rows of 3. */
+.choices.grid-3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+@media (max-width: 860px) {
+  .choices.grid-3 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 520px) {
+  .choices.grid-3 {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.choice-card .star {
+  color: #eda100;
+}
+
+a.brand {
+  color: inherit;
+  text-decoration: none;
+  border-radius: 8px;
+}
+
+.brand img {
+  width: 36px;
+  height: 36px;
+}
+
+.choice-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+}
+
+.choice-card .meta {
+  margin-top: auto;
+  padding-top: 6px;
+}

@@ -1,6 +1,0 @@
-# Context is the repo root; send only what the build needs.
-*
-!web
-!server/examples
-web/node_modules
-web/dist

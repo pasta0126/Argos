@@ -16,12 +16,12 @@ is doing (model loading, sending, queued, retrying, failed).
 - The API allows cross-origin browser calls from the wizard's origin (CORS, configurable
   allow-list, `Retry-After` exposed).
 - New web front (wizard) served at `https://argos.northernarchive.com/`, which it takes
-  over entirely. Steps: key → mode (preset / custom / example) → text → questions → options →
-  review & send → result.
+  over entirely. Steps: key → mode (custom by default, or a preset) → text → questions →
+  options → review & send → result.
 - The custom mode builds a `/v1/decide` body from typed forms (choice / score / yes-no
   editors, with the API's limits enforced before sending); the preset mode calls
-  `POST /v1/presets/<name>` with an optional question subset; examples load the requests in
-  `server/examples/` into the custom editor; a preset can be copied into the custom editor.
+  `POST /v1/presets/<name>` with an optional question subset; a preset can be copied into
+  the custom editor.
 - A live payload JSON preview while building; after sending, the payload JSON, the response
   JSON (both copyable), a ready-to-paste curl with the key masked, and a visual rendering of
   each answer (bars per option/level, yes/no split bar, confidence, low-confidence flag,

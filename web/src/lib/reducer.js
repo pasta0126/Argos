@@ -1,4 +1,4 @@
-import { draftFromBody, emptyDraft, freeName, newLevel, newOption, newQuestion, questionsFromApi } from './draft'
+import { emptyDraft, freeName, newLevel, newOption, newQuestion, questionsFromApi } from './draft'
 import { MAX_QUESTIONS } from './limits'
 
 const mapQ = (draft, id, fn) => ({ ...draft, questions: draft.questions.map((q) => (q.id === id ? fn(q) : q)) })
@@ -19,10 +19,6 @@ export function draftReducer(draft, action) {
       }
     case 'chooseCustom':
       return { ...draft, mode: 'custom', presetName: null }
-    case 'loadExample': {
-      const loaded = draftFromBody(action.body)
-      return { ...loaded, presetName: null }
-    }
     case 'customizePreset':
       return { ...draft, mode: 'custom', presetName: null, questions: questionsFromApi(action.questions) }
     case 'toggleSubset': {

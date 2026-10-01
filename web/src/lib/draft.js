@@ -29,7 +29,7 @@ export function newQuestion(type = 'choice', name = '') {
 
 export function emptyDraft() {
   return {
-    mode: null, // 'preset' | 'custom'
+    mode: 'custom', // 'preset' | 'custom'
     presetName: null,
     presetQuestions: [], // names, in preset order
     presetSubset: [], // checked names
@@ -64,7 +64,7 @@ export function questionsFromApi(questions) {
   })
 }
 
-/** Custom draft from a /v1/decide body (examples, "personalizar" a preset). */
+/** Custom draft from a /v1/decide body. */
 export function draftFromBody(body) {
   return {
     ...emptyDraft(),

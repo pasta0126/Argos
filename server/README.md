@@ -11,8 +11,8 @@ across hosts, so update the URL in scripts.
 
 All `/v1/*` endpoints need `Authorization: Bearer <key>` (keys in `.env`, see below).
 
-- **Web wizard:** <https://argos.northernarchive.com> builds a request step by step (presets,
-  custom questions or the [`examples/`](examples/)), sends it and shows the answer as bars
+- **Web wizard:** <https://argos.northernarchive.com> builds a request step by step (custom
+  questions or a preset), sends it and shows the answer as bars
   plus the exact request/response JSON and a curl. Code and deploy: [`../web/`](../web/README.md).
 - **API reference with request/response examples for every endpoint** (Spanish):
   [`API.md`](API.md).

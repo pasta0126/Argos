@@ -20,8 +20,12 @@ describe('validate', () => {
     expect(validate(custom(choice()))).toEqual([])
   })
 
+  test('a new draft starts in custom mode', () => {
+    expect(emptyDraft().mode).toBe('custom')
+  })
+
   test('mode is required', () => {
-    expect(fields({ ...emptyDraft(), text: 'x' })).toContain('mode')
+    expect(fields({ ...emptyDraft(), mode: null, text: 'x' })).toContain('mode')
   })
 
   test('empty text', () => {

@@ -20,6 +20,14 @@ API at `https://argos-api.northernarchive.com`, the only origin it sends request
 - **WHEN** the wizard checks health, verifies the key or sends a decision
 - **THEN** the browser requests `https://argos-api.northernarchive.com/...` and no other host
 
+### Requirement: Logo returns home
+The header logo and title SHALL be a link that returns to the start of the wizard (the mode
+step, or the key step when no key is set) without discarding the request being built.
+
+#### Scenario: Home from a later step
+- **WHEN** the user is on the questions step and clicks the Argos logo
+- **THEN** the wizard shows the mode step and the request built so far is kept
+
 ### Requirement: Spanish interface
 All wizard text (labels, help, status and error messages) SHALL be in Spanish; API field
 names in JSON views SHALL stay as the API defines them.
@@ -68,18 +76,17 @@ data. A step SHALL not advance while its input is invalid, and SHALL say why.
 - **THEN** the wizard does not advance and shows that the text is required
 
 ### Requirement: Request modes
-On the mode step the user SHALL choose between: a published preset (fetched from
-`GET /v1/presets`, with its description and questions), a custom request, or one of the
-bundled examples. Choosing an example SHALL load its text, questions and threshold into the
-custom editor.
+On the mode step the user SHALL choose between a custom request, selected by default and
+shown first with a favourite mark, and each published preset fetched from
+`GET /v1/presets`, shown with its description.
+
+#### Scenario: Custom by default
+- **WHEN** the mode step is first shown
+- **THEN** the custom request is selected and listed first
 
 #### Scenario: Presets offered
 - **WHEN** the mode step is shown with a valid key
 - **THEN** every preset returned by `GET /v1/presets` is selectable, with its description
-
-#### Scenario: Example loaded
-- **WHEN** the user picks the "ticket completo" example
-- **THEN** the custom editor contains its text, its three questions and `min_confidence` 0.8
 
 ### Requirement: Text step
 The text step SHALL accept free text, show a live character count against the 8,000

@@ -147,15 +147,12 @@ is never the only signal (check icon + bold label) for accessibility.
 third-party scripts or fonts), `Referrer-Policy: no-referrer` and
 `X-Content-Type-Options: nosniff`, limiting what an injected script could exfiltrate.
 
-### D8. Examples bundled at build time; API URL as build arg
-The web build imports `server/examples/*.json` (Vite `import.meta.glob`, eager), so the
-compose build context is the repo root with `dockerfile: web/Dockerfile`. Only plain
-`/v1/decide` examples (those with a `questions` object) are offered as examples; the
-`preset-*.json` ones are covered by preset mode. Labels come from a small map in the front
-(file name → Spanish title), falling back to the file name.
-`VITE_API_URL` is a Dockerfile `ARG` (default the production API). In dev it is empty and
-Vite's proxy forwards `/v1` and `/health` to the production API, so local dev needs no
-CORS entry for `localhost`.
+### D8. API URL as build arg
+`VITE_API_URL` is a Dockerfile `ARG` (default the production API); the image builds from
+`web/` alone. In dev it is empty and Vite's proxy forwards `/v1` and `/health` to the
+production API, so local dev needs no CORS entry for `localhost`. The bundled examples of
+the first version were dropped from the UI at the owner's request (custom is the default
+mode); `server/examples/` is still used by a round-trip unit test of the editor.
 
 ### D9. nginx
 `index.html` with `Cache-Control: no-cache`; `/assets/*` (hashed names) with

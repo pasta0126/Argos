@@ -6,7 +6,7 @@ petición y respuesta. Público en <https://argos.northernarchive.com>; llama a 
 <https://argos-api.northernarchive.com> (CORS permitido para este origen por
 `ARGOS_CORS_ORIGINS` en `server/.env`).
 
-Pasos: clave → modo (preset, personalizado o ejemplo de `server/examples/`) → texto →
+Pasos: clave → modo (personalizado por defecto, o uno de los presets) → texto →
 preguntas → opciones (`min_confidence`) → revisar y enviar → resultado (Visual · Payload ·
 Respuesta · curl).
 
@@ -43,8 +43,7 @@ docker compose up -d --build
 curl -sI https://argos.northernarchive.com/ | head -1
 ```
 
-La imagen se construye con el repo como contexto (incluye `server/examples/`); la URL de
-la API se fija al construir (`ARG VITE_API_URL`, por defecto la de producción). nginx sirve
+La imagen se construye solo con `web/`; la URL de la API se fija al construir (`ARG VITE_API_URL`, por defecto la de producción). nginx sirve
 el build con CSP estricta y redirige con `308` las rutas antiguas de la API en este host
 (`/v1/*`, `/health`, `/docs`, `/redoc`, `/openapi.json`) a `argos-api.northernarchive.com`.
 Desplegar o parar el front no toca el contenedor `argos-api`.
