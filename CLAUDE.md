@@ -38,9 +38,10 @@ weights volume gets root-owned files). Install `torch` from the CPU index
 - `gate.py` — one inference at a time, bounded wait queue (`ARGOS_MAX_QUEUE`) → 503 `busy`.
 - `schemas.py` — request models (422 on malformed) and `limit_violation` (413 on size limits;
   kept out of Pydantic on purpose so limits are 413, not 422).
-- `presets.py` — Spanish question sets behind `/v1/presets/{name}`; both routes share
-  `run_decision` in `main.py`. A preset question is published only if it reaches 80 %
-  balanced accuracy in `evals/run_presets.py` over `evals/presets.jsonl` (real model, inside
+- `presets.py` — Spanish question sets. `main.py` registers one documented
+  `POST /v1/presets/<name>` per preset (request model from `preset_request_model`, enum of
+  question names) before the hidden generic `/v1/presets/{name}`; all share `run_decision`.
+  A preset question is published only if it reaches 80 % balanced accuracy in `evals/run_presets.py` over `evals/presets.jsonl` (real model, inside
   the image; command in `server/README.md`). Rerun it after touching presets, `laya` or the
   model revision.
 - `auth.py` — `ARGOS_API_KEYS="id:key,..."`; the id is logged, request text never is.

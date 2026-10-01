@@ -1,6 +1,6 @@
 from typing import Annotated, Literal, Union
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, create_model, field_validator
 
 # Limits from the decision-api spec. Exceeding them is 413, not 422, so they are
 # checked by `limit_violation` in the route, not as Pydantic constraints.
@@ -70,6 +70,19 @@ class PresetRequest(BaseModel):
 
 class PresetResponse(DecideResponse):
     preset: str
+
+
+def preset_request_model(name: str, question_names: list[str], example: str) -> type[PresetRequest]:
+    """PresetRequest for one preset: `questions` only accepts that preset's names (a dropdown in Swagger)."""
+
+    class WithExample(PresetRequest):
+        model_config = ConfigDict(json_schema_extra={"examples": [{"text": example, "min_confidence": 0.8}]})
+
+    return create_model(
+        f"{name.capitalize()}PresetRequest",
+        __base__=WithExample,
+        questions=(Annotated[list[Literal[tuple(question_names)]], Field(min_length=1)] | None, None),
+    )
 
 
 def limit_violation(req: DecideRequest) -> str | None:

@@ -14,7 +14,7 @@ Postman o Swagger.
 - [`GET /health`](#get-health): ¿está el servicio listo?
 - [`POST /v1/decide`](#post-v1decide): responder tus propias preguntas sobre un texto
 - [`GET /v1/presets`](#get-v1presets): ver los conjuntos de preguntas ya preparados
-- [`POST /v1/presets/{name}`](#post-v1presetsname): usar un conjunto preparado
+- [`POST /v1/presets/triage` y `POST /v1/presets/guard`](#post-v1presetstriage-y-post-v1presetsguard): usar un conjunto preparado
 - [Errores](#errores)
 - [Escribir buenas preguntas](#escribir-buenas-preguntas)
 
@@ -34,7 +34,8 @@ Postman o Swagger.
 | `GET` | `/health` | Dice si el modelo está cargado | No |
 | `POST` | `/v1/decide` | Responde las preguntas que tú escribes sobre un texto | Sí |
 | `GET` | `/v1/presets` | Lista los conjuntos de preguntas preparados | No |
-| `POST` | `/v1/presets/{name}` | Responde un conjunto preparado sobre un texto | Sí |
+| `POST` | `/v1/presets/triage` | Responde el preset `triage` (mensajes de clientes) sobre un texto | Sí |
+| `POST` | `/v1/presets/guard` | Responde el preset `guard` (mensajes a un asistente de IA) sobre un texto | Sí |
 
 Ejemplo con curl (el resto de ejemplos solo muestran el cuerpo JSON):
 
@@ -387,14 +388,23 @@ modificarlas y enviarlas allí.
 Cada pregunta publicada ha acertado al menos el 80 % (exactitud equilibrada) en un conjunto
 pequeño de textos en español etiquetados (3–4 casos "sí" por pregunta). Los números y los
 presets descartados (`email`, `moderation`, `router`, escalas) están en el
-[README](README.md#presets-get-v1presets-and-post-v1presetsname).
+[README](README.md#presets).
 
 ---
 
-## `POST /v1/presets/{name}`
+## `POST /v1/presets/triage` y `POST /v1/presets/guard`
 
-Responde las preguntas de un preset sobre un texto. Es como `/v1/decide` pero sin escribir
-las preguntas.
+Cada preset tiene su propio endpoint: responde las preguntas de ese preset sobre un texto. Es
+como `/v1/decide` pero sin escribir las preguntas. En Swagger aparecen en el grupo
+**presets**, con la lista de preguntas y un desplegable para el campo `questions`.
+
+Los dos funcionan igual; solo cambian las preguntas (tabla de [presets
+disponibles](#presets-disponibles)). Si un preset nuevo se publica en el futuro, tendrá su
+propio `POST /v1/presets/<nombre>`.
+
+> **Ruta genérica.** `POST /v1/presets/{name}` (con el nombre como variable) sigue
+> funcionando para clientes que construyen la URL a partir de un dato, pero no aparece en
+> Swagger. Con un nombre que no existe responde `404`.
 
 ### Cuerpo de la petición
 
@@ -402,7 +412,7 @@ las preguntas.
 |---|---|---|---|
 | `text` | string | Sí | Texto a analizar. 1–8.000 caracteres |
 | `min_confidence` | número 0–1 | No | Igual que en `/v1/decide` |
-| `questions` | lista de strings | No | Responder solo estas preguntas del preset (más rápido). Si falta, se responden todas |
+| `questions` | lista de strings | No | Responder solo estas preguntas del preset (más rápido). Solo admite las preguntas de ese preset. Si falta, se responden todas |
 
 ### Respuesta `200`
 
@@ -486,10 +496,10 @@ Igual que la de `/v1/decide` más el campo `preset` con el nombre del preset.
 }
 ```
 
-### Errores de `/v1/presets/{name}`
+### Errores de los presets
 
-Los mismos que `/v1/decide`, más `404` si el preset no existe y `422` si `questions` incluye
-una pregunta que el preset no tiene.
+Los mismos que `/v1/decide`, más `422` si `questions` incluye una pregunta que el preset no
+tiene (el error indica las válidas) y, solo en la ruta genérica, `404` si el preset no existe.
 
 ### Limitaciones conocidas de los presets
 
@@ -508,7 +518,7 @@ el motivo en texto.
 | Código | Cuándo | Cuerpo |
 |---|---|---|
 | `401` | Falta la cabecera `Authorization` o la clave no es válida | `{"detail": "missing or invalid API key"}` + cabecera `WWW-Authenticate: Bearer` |
-| `404` | `POST /v1/presets/{name}` con un preset que no existe | `{"detail": "unknown preset 'horoscope'"}` |
+| `404` | Ruta genérica `POST /v1/presets/{name}` con un preset que no existe | `{"detail": "unknown preset 'horoscope'"}` |
 | `413` | Texto > 8.000 caracteres, > 10 preguntas, > 20 opciones en una pregunta o cuerpo > 64 KiB | `{"detail": "text exceeds 8000 characters"}` (el motivo cambia según el límite) |
 | `422` | Cuerpo mal formado: falta un campo, tipo de pregunta desconocido, `criteria` incorrecto, campo no permitido… | Lista de errores; `loc` indica dónde (ver abajo) |
 | `503` | El modelo está cargando, o ya hay una inferencia en curso y 4 esperando | `{"status": "loading"}` o `{"status": "busy"}` + cabecera `Retry-After: 5` |
@@ -538,12 +548,19 @@ Ejemplo de `422`: una pregunta `choice` con una sola opción.
 }
 ```
 
-`422` de un preset con una pregunta inexistente (`"questions": ["mood"]` en `triage`):
+`422` de un preset con una pregunta que no tiene (`"questions": ["mood"]` en
+`POST /v1/presets/triage`): `input` es el nombre rechazado y `msg` lista los válidos.
 
 ```json
 {
   "detail": [
-    {"loc": ["body", "questions", 0], "msg": "preset 'triage' has no question 'mood'", "type": "value_error"}
+    {
+      "type": "literal_error",
+      "loc": ["body", "questions", 0],
+      "msg": "Input should be 'intent', 'refund_requested' or 'churn_risk'",
+      "input": "mood",
+      "ctx": {"expected": "'intent', 'refund_requested' or 'churn_risk'"}
+    }
   ]
 }
 ```

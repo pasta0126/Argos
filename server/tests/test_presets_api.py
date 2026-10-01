@@ -138,3 +138,42 @@ async def test_logs_preset_name_but_not_text(client, caplog):
     assert "preset=triage" in logged
     assert f"questions={len(PRESETS['triage'].questions)}" in logged
     assert secret not in logged
+
+
+async def test_openapi_lists_one_operation_per_preset_and_hides_generic(client):
+    paths = (await client.get("/openapi.json")).json()["paths"]
+    for name in PRESETS:
+        assert "post" in paths[f"/v1/presets/{name}"], name
+    assert "/v1/presets/{name}" not in paths
+
+
+async def test_openapi_subset_field_lists_the_preset_questions(client):
+    schema = (await client.get("/openapi.json")).json()
+    ref = schema["paths"]["/v1/presets/guard"]["post"]["requestBody"]["content"]["application/json"]["schema"]["$ref"]
+    model = schema["components"]["schemas"][ref.rsplit("/", 1)[1]]
+    array = next(s for s in model["properties"]["questions"]["anyOf"] if s.get("type") == "array")
+    assert set(array["items"]["enum"]) == set(PRESETS["guard"].questions)
+    assert model["examples"][0]["text"] == PRESETS["guard"].example
+
+
+async def test_per_preset_route_runs_the_preset(client, engine):
+    r = await client.post("/v1/presets/guard", json={"text": TEXT}, headers=AUTH)
+    assert r.status_code == 200
+    assert r.json()["preset"] == "guard"
+    assert set(r.json()["answers"]) == set(PRESETS["guard"].questions)
+
+
+async def test_per_preset_unknown_question_is_422_naming_it(client, engine):
+    r = await client.post("/v1/presets/triage", json={"text": TEXT, "questions": ["mood"]}, headers=AUTH)
+    assert r.status_code == 422
+    errors = r.json()["detail"]
+    assert any(e["loc"][:2] == ["body", "questions"] and e["input"] == "mood" for e in errors), errors
+    assert engine.calls == []
+
+
+async def test_per_preset_route_logs_preset_without_text(client, caplog):
+    caplog.set_level(logging.INFO, logger="argos")
+    secret = "Mi contraseña es hunter2"
+    assert (await client.post("/v1/presets/guard", json={"text": secret}, headers=AUTH)).status_code == 200
+    logged = "\n".join(rec.getMessage() for rec in caplog.records)
+    assert "preset=guard" in logged and secret not in logged

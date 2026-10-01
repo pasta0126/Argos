@@ -128,8 +128,10 @@ uno y cambia el texto o las preguntas para probar tus propios casos.
 
 ## 5. Presets: preguntas ya preparadas
 
-Para algunos casos frecuentes no hace falta escribir preguntas: envías solo el texto a
-`POST /v1/presets/{nombre}`. La lista de presets y sus preguntas está en `GET /v1/presets`.
+Para algunos casos frecuentes no hace falta escribir preguntas: cada preset tiene su propio
+endpoint y le envías solo el texto: `POST /v1/presets/triage` o `POST /v1/presets/guard`. En
+Swagger están en el grupo **presets**, con sus preguntas descritas. La lista completa está en
+`GET /v1/presets`.
 
 | Preset | Para qué | Preguntas |
 |---|---|---|
@@ -151,7 +153,7 @@ curl -s https://argos.northernarchive.com/v1/presets/triage \
 - La respuesta es igual que la de `/v1/decide`, con un campo `preset` añadido.
 - Para responder solo algunas preguntas: `"questions": ["jailbreak"]`. Es más rápido:
   `triage` completo tarda ~5,5 s, `guard` ~3 s.
-- Un preset que no existe da `404`; una pregunta que el preset no tiene, `422`.
+- Una pregunta que el preset no tiene da `422` y el error lista las válidas.
 - Fallos conocidos: `jailbreak` y `prompt_injection` saltan con mensajes que solo contienen
   datos personales; `refund_requested` salta con quejas que no piden dinero. Los aciertos
   medidos están en el README; es una muestra pequeña.

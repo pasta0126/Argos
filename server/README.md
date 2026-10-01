@@ -68,10 +68,13 @@ Errors: `401` bad/missing key · `422` malformed (body names the field) · `413`
 chars, > 10 questions, > 20 options, or body > 64 KiB · `503` + `Retry-After` while the model
 loads or when 4 requests are already waiting behind the running one.
 
-### Presets: `GET /v1/presets` and `POST /v1/presets/{name}`
+### Presets
 
-Ready-made Spanish question sets, so a caller only sends the text. `GET /v1/presets` lists
-them with their questions in `/v1/decide` format (no inference; works while loading).
+Ready-made Spanish question sets, so a caller only sends the text. Each preset has its own
+endpoint, `POST /v1/presets/triage` and `POST /v1/presets/guard`, listed in Swagger with its
+questions and a dropdown for `questions`. `GET /v1/presets` lists them with their questions
+in `/v1/decide` format (no inference; works while loading). The generic
+`POST /v1/presets/{name}` still works (`404` for an unknown name) but is hidden from Swagger.
 
 ```bash
 curl -s https://argos.northernarchive.com/v1/presets/triage \
@@ -82,7 +85,8 @@ curl -s https://argos.northernarchive.com/v1/presets/triage \
 Body: `text`, optional `min_confidence`, optional `questions` (list of question names to
 answer only those). Latency on the Pi: `guard` ~3 s, `triage` ~5.5 s (the 6-option `intent`
 is the slow part). Response: the `/v1/decide` response plus `"preset": "triage"`. Errors as
-`/v1/decide`, plus `404` unknown preset and `422` unknown question name.
+`/v1/decide`, plus `422` for a question name the preset does not have (`literal_error`
+listing the valid names).
 
 | preset | question | accuracy | balanced accuracy | "yes" texts detected |
 |---|---|---|---|---|
