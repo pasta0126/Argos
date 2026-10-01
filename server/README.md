@@ -14,7 +14,7 @@ There is no UI beyond the auto-generated API docs:
   *Try it out*); OpenAPI schema at `/openapi.json`.
 - **Postman:** import [`postman/argos.postman_collection.json`](postman/argos.postman_collection.json)
   and set the `apiKey` collection variable. It has `/health`, the [`examples/`](examples/)
-  requests with expected-result tests, and 401/422/413 cases. Headless:
+  requests with expected-result tests, the presets, and 401/404/422/413 cases. Headless:
   `npx -y newman run postman/argos.postman_collection.json --env-var apiKey=$ARGOS_KEY`.
 - **Quick-test guide for testers** (Spanish): [`TESTING.md`](TESTING.md).
 
@@ -66,6 +66,43 @@ Errors: `401` bad/missing key · `422` malformed (body names the field) · `413`
 chars, > 10 questions, > 20 options, or body > 64 KiB · `503` + `Retry-After` while the model
 loads or when 4 requests are already waiting behind the running one.
 
+### Presets: `GET /v1/presets` and `POST /v1/presets/{name}`
+
+Ready-made Spanish question sets, so a caller only sends the text. `GET /v1/presets` lists
+them with their questions in `/v1/decide` format (no inference; works while loading).
+
+```bash
+curl -s https://argos.northernarchive.com/v1/presets/triage \
+  -H "Authorization: Bearer $ARGOS_KEY" -H 'content-type: application/json' \
+  -d '{"text": "Me habéis cobrado dos veces, quiero que me devolváis el dinero.", "min_confidence": 0.8}'
+```
+
+Body: `text`, optional `min_confidence`, optional `questions` (list of question names to
+answer only those). Latency on the Pi: `guard` ~3 s, `triage` ~5.5 s (the 6-option `intent`
+is the slow part). Response: the `/v1/decide` response plus `"preset": "triage"`. Errors as
+`/v1/decide`, plus `404` unknown preset and `422` unknown question name.
+
+| preset | question | accuracy | balanced accuracy | "yes" texts detected |
+|---|---|---|---|---|
+| `triage` | `intent` (choice: refund, technical_help, billing_question, information, cancellation, other) | 13/14 | 83 % | — |
+| `triage` | `refund_requested` | 13/16 | 88 % | 4/4 |
+| `triage` | `churn_risk` | 14/14 | 100 % | 3/3 |
+| `guard` | `jailbreak` | 16/18 | 93 % | 3/3 |
+| `guard` | `prompt_injection` | 17/19 | 94 % | 3/3 |
+| `guard` | `sensitive_data` | 17/21 | 89 % | 3/3 |
+
+Measured 2026-10-01 with model revision `55cf4c4e` on the labelled Spanish texts in
+`evals/presets.jsonl` (37 texts). The bar is 80 % balanced accuracy (mean recall per
+expected answer). Samples are small — 3–4 "yes" texts per question — so treat these as a
+sanity check, not a guarantee. Known false positives: `jailbreak` and `prompt_injection`
+fire on messages that only contain personal data; `sensitive_data` fires on jailbreak
+attempts; `refund_requested` fires on angry messages that do not ask for money.
+Laya's `email`, `moderation` and `router` presets and every score question (urgency,
+frustration, severity, difficulty) were evaluated and **not** published: they stayed under
+the bar in Spanish and in Laya's original English (details in the `add-decision-presets`
+design, D8). `router.needs_tools`/`is_sensitive` reached 81 % plain accuracy only by
+answering "no" to almost everything.
+
 ### `GET /health`
 
 Public. `200 {"status":"ok","model":"laya-multilingual"}` when ready, `503 {"status":"loading"}`
@@ -80,7 +117,10 @@ Laya is a fast zero-shot base, not an oracle. From its own docs and our tests:
 - Negations and conditional statements are weak spots: "Si no lo arregláis me doy de baja"
   scored P(threatens to leave) = 0.19 on our deployment. Validate questions on your own texts.
 - Use `min_confidence` and route `low_confidence` answers to a human or a fallback.
-- Latency grows ~linearly with the number of questions (no batching benefit on CPU).
+- Latency grows ~linearly with the number of questions; batching texts (`decide_batch`)
+  measured only 3–7 % faster per text on the Pi, so there is no batch endpoint.
+- Scales with 3–4 levels mostly answer the middle level: in the preset evaluation no score
+  question reached 45 %. Prefer `choice` or `yesno`.
 - Keep `score` scales short: with 5 star levels an enthusiastic review came back
   "2 stars" (0.61); 3 levels (`mal`/`normal`/`bien`) or a `choice` got it right.
 - Prefer concrete questions about the text: "¿necesita respuesta?" answered `false` (0.96)
@@ -128,6 +168,21 @@ docker run --rm -u root --env-file .env -v $PWD/tests:/app/tests:ro -v $PWD/pyte
   -v argos-api_argos-hf-cache:/data/hf argos-api:latest \
   sh -c 'pip install -q pytest~=8.3 pytest-asyncio~=0.24 httpx~=0.28 && su app -c "python -m pytest -m model -p no:cacheprovider"'
 ```
+
+Preset evaluation (real model). Run it after changing `argos_api/presets.py`, upgrading
+`laya` or changing `ARGOS_MODEL_REVISION`. It exits 1 if a published question is under 80 %
+balanced accuracy; `--misses` lists the tuning texts each question got wrong, and
+`--preset NAME` runs one preset:
+
+```bash
+docker run --rm --env-file .env -v $PWD/argos_api:/app/argos_api:ro -v $PWD/evals:/app/evals:ro \
+  -v argos-api_argos-hf-cache:/data/hf argos-api:latest python evals/run_presets.py
+```
+
+It takes ~3 min. `tests/test_presets.py` checks that every label in `evals/presets.jsonl`
+matches a published question and that coverage holds (≥ 10 texts per question, ≥ 3 yes and
+≥ 3 no per yesno, every choice option at least once). Lines with `"holdout": true` are not
+used for rewording; misses are only printed for the others.
 
 ## Deploy (on void-server)
 

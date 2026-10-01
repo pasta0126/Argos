@@ -125,18 +125,49 @@ uno y cambia el texto o las preguntas para probar tus propios casos.
 `ticket-full.json` sirve para ver `low_confidence`: la urgencia sale "bloqueante" con
 0,62, por debajo del umbral de 0,8, así que se marca para revisión.
 
-## 5. Errores que deberías poder reproducir
+## 5. Presets: preguntas ya preparadas
+
+Para algunos casos frecuentes no hace falta escribir preguntas: envías solo el texto a
+`POST /v1/presets/{nombre}`. La lista de presets y sus preguntas está en `GET /v1/presets`.
+
+| Preset | Para qué | Preguntas |
+|---|---|---|
+| `triage` | Mensajes de clientes | `intent` (refund, technical_help, billing_question, information, cancellation, other), `refund_requested`, `churn_risk` |
+| `guard` | Mensajes dirigidos a un asistente de IA | `jailbreak`, `prompt_injection`, `sensitive_data` |
+
+```bash
+curl -s https://argos.northernarchive.com/v1/presets/triage \
+  -H "Authorization: Bearer $ARGOS_KEY" \
+  -H 'Content-Type: application/json' \
+  -d @preset-triage.json
+```
+
+| Archivo | Resultado esperado |
+|---|---|
+| `preset-triage.json` | `intent: refund` (0,997) · `refund_requested: true` (0,997) · `churn_risk: false` (0,68, **low_confidence**) |
+| `preset-guard.json` | `jailbreak: true` (0,98) · `prompt_injection: true` (0,96) · `sensitive_data: false` (0,71) |
+
+- La respuesta es igual que la de `/v1/decide`, con un campo `preset` añadido.
+- Para responder solo algunas preguntas: `"questions": ["jailbreak"]`. Es más rápido:
+  `triage` completo tarda ~5,5 s, `guard` ~3 s.
+- Un preset que no existe da `404`; una pregunta que el preset no tiene, `422`.
+- Fallos conocidos: `jailbreak` y `prompt_injection` saltan con mensajes que solo contienen
+  datos personales; `refund_requested` salta con quejas que no piden dinero. Los aciertos
+  medidos están en el README; es una muestra pequeña.
+
+## 6. Errores que deberías poder reproducir
 
 Están en la carpeta **Errores** de Postman.
 
 | Código | Cuándo | Cómo provocarlo |
 |---|---|---|
 | `401` | Falta la API key o es incorrecta | Quita la cabecera `Authorization` |
-| `422` | JSON mal formado o campo inválido; el cuerpo indica el campo | `"type": "maybe"`, falta `instructions`, un campo desconocido… |
+| `404` | Preset que no existe | `POST /v1/presets/horoscope` |
+| `422` | JSON mal formado o campo inválido; el cuerpo indica el campo | `"type": "maybe"`, falta `instructions`, un campo desconocido, una pregunta que el preset no tiene… |
 | `413` | Supera los límites | Texto > 8.000 caracteres, > 10 preguntas, > 20 opciones |
 | `503` | Modelo cargando (`loading`) o servidor saturado (`busy`) | Llamar justo tras un reinicio, o > 5 peticiones simultáneas. Respeta `Retry-After` |
 
-## 6. Limitaciones conocidas (no son bugs del servicio)
+## 7. Limitaciones conocidas (no son bugs del servicio)
 
 El modelo (Laya) es aproximado, no infalible. Esto ya lo hemos observado:
 
@@ -156,7 +187,7 @@ El modelo (Laya) es aproximado, no infalible. Esto ya lo hemos observado:
 Si cambiar la redacción de la pregunta o de los criterios cambia el resultado, es normal:
 forma parte de lo que hay que probar.
 
-## 7. Qué incluir al reportar un fallo
+## 8. Qué incluir al reportar un fallo
 
 1. El cuerpo JSON completo enviado (sin la API key).
 2. La respuesta completa (código HTTP + cuerpo).

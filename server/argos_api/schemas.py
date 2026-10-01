@@ -59,6 +59,19 @@ class DecideResponse(BaseModel):
     latency_ms: int
 
 
+class PresetRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    text: NonEmpty
+    min_confidence: Annotated[float, Field(ge=0.0, le=1.0)] | None = None
+    # Subset of the preset's question names; None means all of them.
+    questions: Annotated[list[NonEmpty], Field(min_length=1)] | None = None
+
+
+class PresetResponse(DecideResponse):
+    preset: str
+
+
 def limit_violation(req: DecideRequest) -> str | None:
     """Return why the request exceeds a size limit, or None if it fits."""
     if len(req.text) > MAX_TEXT_CHARS:

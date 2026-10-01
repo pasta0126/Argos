@@ -4,7 +4,7 @@ import threading
 import time
 from contextlib import asynccontextmanager
 
-from fastapi import Depends, FastAPI, Request
+from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import JSONResponse
 
@@ -12,7 +12,8 @@ from .auth import require_api_key
 from .config import Settings
 from .engine import DecisionEngine
 from .gate import Busy, InferenceGate
-from .schemas import DecideRequest, DecideResponse, limit_violation
+from .presets import PRESETS
+from .schemas import DecideRequest, DecideResponse, PresetRequest, PresetResponse, limit_violation
 
 log = logging.getLogger("argos")
 
@@ -68,13 +69,14 @@ def create_app(settings: Settings | None = None, engine: DecisionEngine | None =
             response = await call_next(request)
         # Metadata only: never the text, instructions or criteria.
         log.info(
-            "%s %s %d %dms questions=%s client=%s",
+            "%s %s %d %dms questions=%s client=%s preset=%s",
             request.method,
             request.url.path,
             response.status_code,
             (time.monotonic() - started) * 1000,
             getattr(request.state, "question_count", "-"),
             getattr(request.state, "client_id", "-"),
+            getattr(request.state, "preset", "-"),
         )
         return response
 
@@ -84,8 +86,8 @@ def create_app(settings: Settings | None = None, engine: DecisionEngine | None =
             return _unavailable("loading")
         return {"status": "ok", "model": engine.model_name}
 
-    @app.post("/v1/decide", response_model=DecideResponse)
-    async def decide(body: DecideRequest, request: Request, _client: str = Depends(require_api_key)):
+    async def run_decision(body: DecideRequest, request: Request) -> DecideResponse | JSONResponse:
+        """The decision pipeline shared by /v1/decide and the presets: limits, readiness, gate, engine."""
         request.state.question_count = len(body.questions)
         if (reason := limit_violation(body)) is not None:
             return JSONResponse({"detail": reason}, status_code=413)
@@ -99,5 +101,46 @@ def create_app(settings: Settings | None = None, engine: DecisionEngine | None =
         except Busy:
             return _unavailable("busy")
         return DecideResponse(answers=answers, model=engine.model_name, latency_ms=latency_ms)
+
+    @app.post("/v1/decide", response_model=DecideResponse)
+    async def decide(body: DecideRequest, request: Request, _client: str = Depends(require_api_key)):
+        return await run_decision(body, request)
+
+    @app.get("/v1/presets")
+    async def list_presets(_client: str = Depends(require_api_key)):
+        # Static: answers while the model loads. Questions in the format /v1/decide accepts.
+        return {
+            "presets": {
+                name: {
+                    "description": preset.description,
+                    "questions": {q: question.model_dump(exclude_none=True) for q, question in preset.questions.items()},
+                }
+                for name, preset in PRESETS.items()
+            }
+        }
+
+    @app.post("/v1/presets/{name}", response_model=PresetResponse)
+    async def run_preset(name: str, body: PresetRequest, request: Request, _client: str = Depends(require_api_key)):
+        if (preset := PRESETS.get(name)) is None:
+            raise HTTPException(status_code=404, detail=f"unknown preset {name!r}")
+        request.state.preset = name
+        questions = preset.questions
+        if body.questions is not None:
+            unknown = [(i, q) for i, q in enumerate(body.questions) if q not in questions]
+            if unknown:
+                raise HTTPException(
+                    status_code=422,
+                    detail=[
+                        {"loc": ["body", "questions", i], "msg": f"preset {name!r} has no question {q!r}", "type": "value_error"}
+                        for i, q in unknown
+                    ],
+                )
+            questions = {q: questions[q] for q in body.questions}
+        result = await run_decision(
+            DecideRequest(text=body.text, questions=questions, min_confidence=body.min_confidence), request
+        )
+        if isinstance(result, JSONResponse):
+            return result
+        return PresetResponse(preset=name, **result.model_dump())
 
     return app

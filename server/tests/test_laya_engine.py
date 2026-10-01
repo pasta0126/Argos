@@ -94,3 +94,16 @@ def test_real_model_smoke():
     assert answers["department"]["choice"] == "billing"
     assert 0 <= answers["urgency"]["score"] <= 2
     assert 0 <= answers["churn"]["probability"] <= 1
+
+
+@pytest.mark.model
+def test_real_model_runs_every_preset():
+    from argos_api.presets import PRESETS
+
+    engine = LayaEngine(revision=os.environ.get("ARGOS_MODEL_REVISION", ""), threads=3)
+    engine.load()
+    text = "Me habéis cobrado dos veces este mes, quiero que me devolváis el dinero."
+    for name, preset in PRESETS.items():
+        answers = engine.decide(text, preset.questions, 0.8)
+        assert set(answers) == set(preset.questions), name
+        assert all(0 <= a["confidence"] <= 1 and "low_confidence" in a for a in answers.values()), name
