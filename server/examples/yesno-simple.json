@@ -1,0 +1,10 @@
+{
+  "text": "Te llamo el martes 14 a las 10 para cerrar el contrato.",
+  "questions": {
+    "mentions_date": {
+      "type": "yesno",
+      "instructions": "¿El texto menciona una fecha o una hora concreta?"
+    }
+  },
+  "min_confidence": 0.8
+}

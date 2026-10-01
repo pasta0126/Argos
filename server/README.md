@@ -10,6 +10,8 @@ All `/v1/*` endpoints need `Authorization: Bearer <key>` (keys in `.env`, see be
 
 There is no UI beyond the auto-generated API docs:
 
+- **API reference with request/response examples for every endpoint** (Spanish):
+  [`API.md`](API.md).
 - **Swagger UI:** <https://argos.northernarchive.com/docs> (**Authorize** → paste the key →
   *Try it out*); OpenAPI schema at `/openapi.json`.
 - **Postman:** import [`postman/argos.postman_collection.json`](postman/argos.postman_collection.json)
@@ -99,8 +101,8 @@ fire on messages that only contain personal data; `sensitive_data` fires on jail
 attempts; `refund_requested` fires on angry messages that do not ask for money.
 Laya's `email`, `moderation` and `router` presets and every score question (urgency,
 frustration, severity, difficulty) were evaluated and **not** published: they stayed under
-the bar in Spanish and in Laya's original English (details in the `add-decision-presets`
-design, D8). `router.needs_tools`/`is_sensitive` reached 81 % plain accuracy only by
+the bar in Spanish and in Laya's original English (details in
+`openspec/changes/archive/2026-10-01-add-decision-presets/design.md`, D8). `router.needs_tools`/`is_sensitive` reached 81 % plain accuracy only by
 answering "no" to almost everything.
 
 ### `GET /health`

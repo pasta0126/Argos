@@ -5,6 +5,7 @@ Argos no tiene pantalla: es una API HTTP. Le envías un texto y unas preguntas, 
 devuelve la respuesta a cada pregunta con su probabilidad.
 
 - URL base: `https://argos.northernarchive.com`
+- Referencia de cada endpoint con ejemplos de petición y respuesta: [`API.md`](API.md)
 - Swagger (documentación interactiva): <https://argos.northernarchive.com/docs>
 - Colección de Postman: [`postman/argos.postman_collection.json`](postman/argos.postman_collection.json)
 - Ejemplos de petición: [`examples/`](examples/)

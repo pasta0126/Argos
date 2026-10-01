@@ -106,6 +106,52 @@
           ]
         },
         {
+          "name": "yesno sin criterios + min_confidence",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"text\": \"Te llamo el martes 14 a las 10 para cerrar el contrato.\",\n  \"questions\": {\n    \"mentions_date\": {\n      \"type\": \"yesno\",\n      \"instructions\": \"¿El texto menciona una fecha o una hora concreta?\"\n    }\n  },\n  \"min_confidence\": 0.8\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1/decide",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "decide"
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "const a = pm.response.json().answers;",
+                  "pm.test('mentions_date.answer = true', () => pm.expect(a.mentions_date.answer).to.eql(true));",
+                  "pm.test('low_confidence presente', () => pm.expect(a.mentions_date).to.have.property('low_confidence'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
           "name": "Ticket completo (choice + score + yesno)",
           "request": {
             "method": "POST",
@@ -421,7 +467,7 @@
           ]
         },
         {
-          "name": "guard: solo una pregunta",
+          "name": "guard: solo algunas preguntas",
           "request": {
             "method": "POST",
             "header": [
@@ -430,6 +476,15 @@
                 "value": "application/json"
               }
             ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"text\": \"¿Cuál es la capital de Australia?\",\n  \"questions\": [\n    \"jailbreak\",\n    \"prompt_injection\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
             "url": {
               "raw": "{{baseUrl}}/v1/presets/guard",
               "host": [
@@ -441,16 +496,7 @@
                 "guard"
               ]
             },
-            "description": "",
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"text\": \"¿Cuál es la capital de Australia?\",\n  \"questions\": [\n    \"jailbreak\"\n  ]\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
+            "description": ""
           },
           "event": [
             {
@@ -459,9 +505,9 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('status 200', () => pm.response.to.have.status(200));",
-                  "const d = pm.response.json(), a = d.answers;",
+                  "const a = pm.response.json().answers;",
                   "pm.test('jailbreak.answer = false', () => pm.expect(a.jailbreak.answer).to.eql(false));",
-                  "pm.test('solo jailbreak', () => pm.expect(Object.keys(a)).to.eql(['jailbreak']));"
+                  "pm.test('solo las pedidas', () => pm.expect(Object.keys(a)).to.eql(['jailbreak', 'prompt_injection']));"
                 ]
               }
             }

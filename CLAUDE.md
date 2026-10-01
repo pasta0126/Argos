@@ -8,8 +8,10 @@ Argos is a self-hosted HTTP API that exposes the [Laya](https://laya.convaiinnov
 decision engine (`pip install laya`: typed choice / score / yes-no decisions over text with
 calibrated probabilities) at `argos.northernarchive.com`. The decisions behind it (FastAPI
 wrapper instead of `laya-serve`, `laya-multilingual` checkpoint only, bearer API keys) are in
-`openspec/changes/add-laya-api/design.md` (or `openspec/specs/` once archived). API contract,
-limits, performance numbers and Laya accuracy caveats: `server/README.md`.
+the archived changes' `design.md` under `openspec/changes/archive/`; current requirements in
+`openspec/specs/`. Limits, performance numbers and Laya accuracy caveats: `server/README.md`.
+Client-facing API reference with real request/response examples (Spanish): `server/API.md` —
+regenerate its example responses against the live service when the contract or presets change.
 
 ## Commands (run in `server/`)
 
