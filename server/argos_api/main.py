@@ -6,6 +6,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.concurrency import run_in_threadpool
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from .auth import require_api_key
@@ -87,6 +88,20 @@ def create_app(settings: Settings | None = None, engine: DecisionEngine | None =
             getattr(request.state, "preset", "-"),
         )
         return response
+
+    # Added last so it wraps everything: 413s from the guard above, 401s and 503s must carry
+    # CORS headers too, or the browser hides them from the wizard as network errors.
+    if settings.cors_origins:
+        app.add_middleware(
+            CORSMiddleware,
+            allow_origins=settings.cors_origins,
+            allow_methods=["GET", "POST"],
+            allow_headers=["Authorization", "Content-Type"],
+            expose_headers=["Retry-After"],
+            allow_credentials=False,
+            max_age=600,
+        )
+    log.info("CORS origins: %s", ", ".join(settings.cors_origins) or "none")
 
     @app.get("/health")
     async def health():

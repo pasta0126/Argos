@@ -20,12 +20,18 @@ class Settings(BaseSettings):
     argos_threads: int = 3
     # Requests allowed to wait while an inference is running; beyond -> 503.
     argos_max_queue: int = 4
+    # Comma-separated browser origins allowed to call the API (the web wizard). Empty disables CORS.
+    argos_cors_origins: str = "https://argos.northernarchive.com"
 
     @field_validator("argos_api_keys")
     @classmethod
     def _keys_present(cls, value: str) -> str:
         parse_api_keys(value)
         return value
+
+    @property
+    def cors_origins(self) -> list[str]:
+        return [o.strip() for o in self.argos_cors_origins.split(",") if o.strip()]
 
     @cached_property
     def api_keys(self) -> dict[str, str]:

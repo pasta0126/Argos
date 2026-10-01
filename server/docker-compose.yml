@@ -14,7 +14,7 @@ services:
       - proxy
     labels:
       - traefik.enable=true
-      - traefik.http.routers.argos-api.rule=Host(`argos.northernarchive.com`)
+      - traefik.http.routers.argos-api.rule=Host(`argos-api.northernarchive.com`)
       - traefik.http.routers.argos-api.entrypoints=websecure
       - traefik.http.routers.argos-api.tls.certresolver=le
       - traefik.http.services.argos-api.loadbalancer.server.port=8080

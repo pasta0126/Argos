@@ -2,7 +2,7 @@
   "info": {
     "name": "Argos API",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "description": "Laya decision engine over HTTP. Set the `apiKey` collection variable (Bearer key). Swagger: https://argos.northernarchive.com/docs. Request bodies mirror server/examples/*.json (Presets folder: preset-*.json); guide: server/TESTING.md."
+    "description": "Laya decision engine over HTTP. Set the `apiKey` collection variable (Bearer key). Swagger: https://argos-api.northernarchive.com/docs. Request bodies mirror server/examples/*.json (Presets folder: preset-*.json); guide: server/TESTING.md."
   },
   "auth": {
     "type": "bearer",
@@ -17,7 +17,7 @@
   "variable": [
     {
       "key": "baseUrl",
-      "value": "https://argos.northernarchive.com"
+      "value": "https://argos-api.northernarchive.com"
     },
     {
       "key": "apiKey",

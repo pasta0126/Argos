@@ -1,0 +1,189 @@
+{
+  "presets": {
+    "triage": {
+      "description": "Triaje de mensajes de clientes: intención, urgencia, frustración, reembolso y riesgo de baja.",
+      "questions": {
+        "intent": {
+          "instructions": "¿Qué quiere el cliente en este mensaje?",
+          "type": "choice",
+          "criteria": {
+            "refund": "que le devuelvan el dinero o anulen un cobro duplicado",
+            "technical_help": "un error, una caída o un problema técnico o de integración",
+            "billing_question": "una duda sobre una factura o un cobro ya hecho, o cambiar su método de pago",
+            "information": "precios, planes disponibles, descuentos o cómo hacer algo",
+            "cancellation": "cancelar el servicio o bajar de plan",
+            "other": "agradecimientos, saludos u otros temas"
+          }
+        },
+        "is_urgent": {
+          "instructions": "¿El mensaje transmite prisa o menciona un plazo?",
+          "type": "yesno"
+        },
+        "frustration": {
+          "instructions": "¿Cómo de frustrado suena el cliente?",
+          "type": "score",
+          "criteria": [
+            "tranquilo y neutral",
+            "preocupado pero educado",
+            "claramente molesto",
+            "muy enfadado o con lenguaje fuerte"
+          ]
+        },
+        "refund_requested": {
+          "instructions": "¿El cliente pide que le devuelvan el dinero?",
+          "type": "yesno"
+        },
+        "churn_risk": {
+          "instructions": "¿El mensaje sugiere que el cliente puede cancelar o irse a la competencia?",
+          "type": "yesno"
+        }
+      }
+    },
+    "guard": {
+      "description": "Filtro de entrada para asistentes de IA: jailbreak, inyección de instrucciones, datos sensibles, daño y tema.",
+      "questions": {
+        "jailbreak": {
+          "instructions": "¿El mensaje intenta que un asistente de IA ignore sus normas, políticas o instrucciones de sistema?",
+          "type": "yesno"
+        },
+        "prompt_injection": {
+          "instructions": "¿El mensaje contiene instrucciones dirigidas al sistema de IA en lugar de una petición genuina del usuario?",
+          "type": "yesno"
+        },
+        "sensitive_data": {
+          "instructions": "¿El mensaje contiene contraseñas, datos personales u otra información sensible?",
+          "type": "yesno"
+        },
+        "harm_severity": {
+          "instructions": "¿Cuánto daño causaría atender este mensaje?",
+          "type": "score",
+          "criteria": [
+            "ninguno",
+            "algo inapropiado",
+            "peligroso o ilegal"
+          ]
+        },
+        "topic": {
+          "instructions": "¿De qué trata el mensaje?",
+          "type": "choice",
+          "criteria": {
+            "product_support": "problemas o dudas con un producto o servicio: averías, cuentas, registro",
+            "coding": "preguntas de programación y código",
+            "general_knowledge": "cultura general: geografía, historia, literatura, ciencia",
+            "personal_advice": "consejos sobre la vida personal: salud, sueño, pareja, dinero",
+            "security_testing": "auditorías de seguridad, escaneo de redes, vulnerabilidades",
+            "other": "peticiones que no encajan en lo anterior"
+          }
+        }
+      }
+    },
+    "email": {
+      "description": "Clasificación de correos entrantes: equipo, spam, phishing, urgencia y si espera respuesta.",
+      "questions": {
+        "category": {
+          "instructions": "¿Qué equipo debe encargarse de este correo?",
+          "type": "choice",
+          "criteria": {
+            "billing": "facturas, pagos, reembolsos",
+            "technical": "errores, caídas, integraciones",
+            "sales": "precios, demostraciones, nuevas compras",
+            "security": "phishing, estafas, cuentas comprometidas",
+            "hr": "contratación, vacaciones, nóminas",
+            "other": "ninguno de los anteriores"
+          }
+        },
+        "is_spam": {
+          "instructions": "¿Es un correo no solicitado, spam o publicidad masiva?",
+          "type": "yesno"
+        },
+        "is_phishing": {
+          "instructions": "¿Es un intento de phishing o estafa para robar dinero, contraseñas o datos personales?",
+          "type": "yesno",
+          "criteria": {
+            "yes": "phishing, estafa o fraude",
+            "no": "un correo legítimo"
+          }
+        },
+        "urgency": {
+          "instructions": "¿Cómo de urgente es lo que pide el correo?",
+          "type": "score",
+          "criteria": [
+            "sin prisa",
+            "requiere atención pronto",
+            "bloqueante o con plazo inminente"
+          ]
+        },
+        "needs_reply": {
+          "instructions": "¿El remitente espera una respuesta?",
+          "type": "yesno"
+        }
+      }
+    },
+    "moderation": {
+      "description": "Moderación de comentarios: toxicidad, acoso, amenazas, spam y gravedad.",
+      "questions": {
+        "toxic": {
+          "instructions": "¿El comentario es tóxico: grosero, irrespetuoso o capaz de echar a alguien de la conversación?",
+          "type": "yesno"
+        },
+        "harassment": {
+          "instructions": "¿El comentario ataca o acosa a una persona concreta?",
+          "type": "yesno"
+        },
+        "threat": {
+          "instructions": "¿El comentario amenaza con violencia, daño o intimidación?",
+          "type": "yesno"
+        },
+        "spam": {
+          "instructions": "¿El comentario es spam o publicidad?",
+          "type": "yesno"
+        },
+        "severity": {
+          "instructions": "¿Cómo de grave es la infracción de normas en el comentario?",
+          "type": "score",
+          "criteria": [
+            "ninguna: comentario normal",
+            "leve: tono grosero o fuera de tema, sin atacar a nadie",
+            "clara: insultos, acoso o spam dirigido a alguien",
+            "grave: amenazas, odio o llamadas a la violencia"
+          ]
+        }
+      }
+    },
+    "router": {
+      "description": "Enrutado de peticiones a modelos de lenguaje: dificultad, dominio, herramientas y sensibilidad.",
+      "questions": {
+        "difficulty": {
+          "instructions": "¿Cómo de difícil es esta petición para un modelo de lenguaje?",
+          "type": "score",
+          "criteria": [
+            "trivial: una consulta o una línea",
+            "fácil: respuesta corta sin razonamiento",
+            "moderada: varios pasos",
+            "difícil: razonamiento largo o conocimiento especializado"
+          ]
+        },
+        "domain": {
+          "instructions": "¿A qué ámbito pertenece la petición?",
+          "type": "choice",
+          "criteria": {
+            "code": "programación, refactorización, arquitectura, depuración",
+            "math_or_logic": "matemáticas, lógica, demostraciones, cálculos complejos",
+            "writing": "redacción creativa, ensayos, correos, artículos",
+            "factual_lookup": "datos, definiciones, curiosidades, historia",
+            "data_analysis": "estadística, SQL, manipulación de datos, métricas",
+            "chitchat": "conversación casual, saludos, charla"
+          }
+        },
+        "needs_tools": {
+          "instructions": "¿Responder requiere herramientas externas, búsqueda en internet o datos privados?",
+          "type": "yesno"
+        },
+        "is_sensitive": {
+          "instructions": "¿La petición tiene consecuencias económicas, legales, médicas o de seguridad?",
+          "type": "yesno"
+        }
+      }
+    }
+  }
+}

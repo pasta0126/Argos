@@ -22,10 +22,11 @@ Postman o Swagger.
 
 | | |
 |---|---|
-| URL base | `https://argos.northernarchive.com` |
+| Wizard web | <https://argos.northernarchive.com>: monta la petición paso a paso y muestra la respuesta en barras, con el JSON enviado y recibido |
+| URL base | `https://argos-api.northernarchive.com` — Antes estaba en `argos.northernarchive.com` (hoy el wizard web): allí `/v1/*`, `/health` y `/docs` responden `308` a esta URL. Los navegadores lo siguen; `curl -L` quita la cabecera `Authorization` al cambiar de host (→ `401`), así que actualiza la URL en tus scripts |
 | Formato | JSON en la petición (`Content-Type: application/json`) y en la respuesta |
 | Autenticación | Cabecera `Authorization: Bearer <api-key>` en todos los `/v1/*`. `/health` es público |
-| Documentación interactiva | Swagger en [`/docs`](https://argos.northernarchive.com/docs): botón **Authorize**, pega la clave sola (sin "Bearer") y usa *Try it out* |
+| Documentación interactiva | Swagger en [`/docs`](https://argos-api.northernarchive.com/docs): botón **Authorize**, pega la clave sola (sin "Bearer") y usa *Try it out* |
 | Tiempo de respuesta | ~1–1,5 s por pregunta en la Raspberry Pi del servidor |
 | Concurrencia | Una inferencia a la vez; hasta 4 peticiones esperan turno, la siguiente recibe `503` |
 
@@ -45,7 +46,7 @@ Ejemplo con curl (el resto de ejemplos solo muestran el cuerpo JSON):
 ```bash
 export ARGOS_KEY=<tu-api-key>
 cd server/examples
-curl -s https://argos.northernarchive.com/v1/decide \
+curl -s https://argos-api.northernarchive.com/v1/decide \
   -H "Authorization: Bearer $ARGOS_KEY" \
   -H 'Content-Type: application/json' \
   -d @ticket-department.json

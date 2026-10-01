@@ -1,12 +1,14 @@
 # Guía rápida de pruebas — Argos API
 
 Para testers: cómo comprobar en 5 minutos que la API funciona y cómo probar casos propios.
-Argos no tiene pantalla: es una API HTTP. Le envías un texto y unas preguntas, y te
+Argos es una API HTTP; para probarla sin escribir JSON está el wizard web (abajo). Le envías un texto y unas preguntas, y te
 devuelve la respuesta a cada pregunta con su probabilidad.
 
-- URL base: `https://argos.northernarchive.com`
+- URL base: `https://argos-api.northernarchive.com` (antes `argos.northernarchive.com`, que ahora es el wizard web y
+  redirige con `308`; `curl -L` pierde la clave al cambiar de host, cambia la URL)
+- Wizard web (sin escribir JSON): <https://argos.northernarchive.com>
 - Referencia de cada endpoint con ejemplos de petición y respuesta: [`API.md`](API.md)
-- Swagger (documentación interactiva): <https://argos.northernarchive.com/docs>
+- Swagger (documentación interactiva): <https://argos-api.northernarchive.com/docs>
 - Colección de Postman: [`postman/argos.postman_collection.json`](postman/argos.postman_collection.json)
 - Ejemplos de petición: [`examples/`](examples/)
 
@@ -22,7 +24,7 @@ Authorization: Bearer <tu-api-key>
 ## 1. Prueba de humo (30 segundos)
 
 ```bash
-curl -s https://argos.northernarchive.com/health
+curl -s https://argos-api.northernarchive.com/health
 ```
 
 | Respuesta | Significado |
@@ -37,7 +39,7 @@ Elige el cliente que prefieras. Las tres opciones hacen la misma petición.
 
 ### Opción A — Swagger (navegador, sin instalar nada)
 
-1. Abre <https://argos.northernarchive.com/docs>.
+1. Abre <https://argos-api.northernarchive.com/docs>.
 2. Pulsa **Authorize** (arriba a la derecha), pega la API key **sola, sin escribir "Bearer"**,
    pulsa **Authorize** y cierra el diálogo. Vale para todas las llamadas hasta que recargues.
 3. Despliega `POST /v1/decide` → **Try it out**.
@@ -61,7 +63,7 @@ que añadir la cabecera a mano.
 export ARGOS_KEY=<tu-api-key>
 cd server/examples
 
-curl -s https://argos.northernarchive.com/v1/decide \
+curl -s https://argos-api.northernarchive.com/v1/decide \
   -H "Authorization: Bearer $ARGOS_KEY" \
   -H 'Content-Type: application/json' \
   -d @ticket-department.json
@@ -142,7 +144,7 @@ La lista completa está en `GET /v1/presets`.
 | `POST /v1/presets/router` | Peticiones a un modelo de lenguaje | `difficulty`, `domain`, `needs_tools`, `is_sensitive` |
 
 ```bash
-curl -s https://argos.northernarchive.com/v1/presets/triage \
+curl -s https://argos-api.northernarchive.com/v1/presets/triage \
   -H "Authorization: Bearer $ARGOS_KEY" \
   -H 'Content-Type: application/json' \
   -d @preset-triage.json

@@ -6,14 +6,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Argos is a self-hosted HTTP API that exposes the [Laya](https://laya.convaiinnovations.com/)
 decision engine (`pip install laya`: typed choice / score / yes-no decisions over text with
-calibrated probabilities) at `argos.northernarchive.com`. The decisions behind it (FastAPI
+calibrated probabilities) at `argos-api.northernarchive.com`. The decisions behind it (FastAPI
 wrapper instead of `laya-serve`, `laya-multilingual` checkpoint only, bearer API keys) are in
 the archived changes' `design.md` under `openspec/changes/archive/`; current requirements in
 `openspec/specs/`. Limits, performance numbers and Laya accuracy caveats: `server/README.md`.
-Client-facing API reference with real request/response examples (Spanish): `server/API.md` —
+Web wizard at `argos.northernarchive.com` (`web/`, Vite + React static build behind nginx; calls
+the API cross-origin, allowed by `ARGOS_CORS_ORIGINS`; the old API paths on that host 308 to
+the API host). Client-facing API reference with real request/response examples (Spanish): `server/API.md` —
 regenerate its example responses against the live service when the contract or presets change.
 
-## Commands (run in `server/`)
+## Commands (run in `server/`; for `web/` see `web/README.md`: `npm test`, `npm run lint`, `npm run build`)
 
 ```bash
 .venv/bin/python -m pytest                                   # fast tests, fake engine, no torch
@@ -30,7 +32,8 @@ weights volume gets root-owned files). Install `torch` from the CPU index
 
 - `main.py` — `create_app(settings, engine)` factory (uvicorn `--factory`). Model loads in a
   background thread at startup; `/health` and `/v1/decide` return 503 until ready. A failed
-  load hard-exits so Docker restarts the container.
+  load hard-exits so Docker restarts the container. CORS (`ARGOS_CORS_ORIGINS`, for the web wizard) is the
+  outermost middleware so 401/413/503 stay readable cross-origin.
 - `engine.py` — `DecisionEngine` protocol; the HTTP layer only depends on this. Tests inject
   `FakeEngine` (`tests/conftest.py`).
 - `laya_engine.py` — the only module importing laya/torch, plus pure translation functions

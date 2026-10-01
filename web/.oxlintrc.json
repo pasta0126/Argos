@@ -1,0 +1,8 @@
+{
+  "plugins": ["react"],
+  "rules": {
+    "react/jsx-key": "error",
+    "react/rules-of-hooks": "error"
+  },
+  "ignorePatterns": ["dist"]
+}

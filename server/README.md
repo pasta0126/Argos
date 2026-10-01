@@ -2,17 +2,21 @@
 
 HTTP API over the [Laya](https://laya.convaiinnovations.com/) decision engine
 (`laya-multilingual` checkpoint): send a text plus typed questions, get calibrated
-answers. Public at `https://argos.northernarchive.com`.
+answers. Public at `https://argos-api.northernarchive.com`. It moved there from
+`argos.northernarchive.com` (now the web wizard), which answers `308` to the new host for
+`/v1/*`, `/health`, `/docs`, `/redoc` and `/openapi.json`; `curl -L` drops `Authorization`
+across hosts, so update the URL in scripts.
 
 ## API
 
 All `/v1/*` endpoints need `Authorization: Bearer <key>` (keys in `.env`, see below).
 
-There is no UI beyond the auto-generated API docs:
-
+- **Web wizard:** <https://argos.northernarchive.com> builds a request step by step (presets,
+  custom questions or the [`examples/`](examples/)), sends it and shows the answer as bars
+  plus the exact request/response JSON and a curl. Code and deploy: [`../web/`](../web/README.md).
 - **API reference with request/response examples for every endpoint** (Spanish):
   [`API.md`](API.md).
-- **Swagger UI:** <https://argos.northernarchive.com/docs> (**Authorize** → paste the key
+- **Swagger UI:** <https://argos-api.northernarchive.com/docs> (**Authorize** → paste the key
   alone, without "Bearer" → *Try it out*); OpenAPI schema at `/openapi.json`. The bearer
   scheme is declared by `HTTPBearer(auto_error=False)` in `auth.py`; it does not change auth.
 - **Postman:** import [`postman/argos.postman_collection.json`](postman/argos.postman_collection.json)
@@ -24,7 +28,7 @@ There is no UI beyond the auto-generated API docs:
 ### `POST /v1/decide`
 
 ```bash
-curl -s https://argos.northernarchive.com/v1/decide \
+curl -s https://argos-api.northernarchive.com/v1/decide \
   -H "Authorization: Bearer $ARGOS_KEY" -H 'content-type: application/json' -d '{
   "text": "Me han cobrado dos veces este mes. Quiero un reembolso.",
   "questions": {
@@ -79,7 +83,7 @@ The generic `POST /v1/presets/{name}` still works (`404` for an unknown name) bu
 from Swagger. Request/response examples for every preset: [`API.md`](API.md#endpoints-de-presets).
 
 ```bash
-curl -s https://argos.northernarchive.com/v1/presets/triage \
+curl -s https://argos-api.northernarchive.com/v1/presets/triage \
   -H "Authorization: Bearer $ARGOS_KEY" -H 'content-type: application/json' \
   -d '{"text": "Me habéis cobrado dos veces, quiero que me devolváis el dinero.", "min_confidence": 0.8}'
 ```
@@ -167,7 +171,9 @@ Raspberry Pi 4B, laya 0.3.22, torch 2.14.1+cpu, 3 threads, model revision `55cf4
 Copy `.env.example`. `ARGOS_API_KEYS` is `id:key,id:key` (one per client; generate with
 `openssl rand -hex 32`; remove a pair + restart to revoke). The service refuses to start
 without keys. `ARGOS_MODEL_REVISION` pins the Hugging Face commit; `ARGOS_THREADS`,
-`ARGOS_MAX_QUEUE` tune CPU use and queueing.
+`ARGOS_MAX_QUEUE` tune CPU use and queueing. `ARGOS_CORS_ORIGINS` (comma-separated, default
+`https://argos-api.northernarchive.com`, empty disables) lists the browser origins allowed to
+call the API cross-origin — the web wizard; it does not replace the API key.
 
 **Memory limit caveat:** the host kernel boots with `cgroup_disable=memory`, so the
 compose `mem_limit: 3g` is currently *not enforced* (Docker warns "No memory limit
@@ -213,5 +219,5 @@ used for rewording; misses are only printed for the others.
 cd ~/argos/server
 docker compose up -d --build
 docker compose logs -f argos-api        # wait for "model laya-multilingual loaded"
-curl -s https://argos.northernarchive.com/health
+curl -s https://argos-api.northernarchive.com/health
 ```
