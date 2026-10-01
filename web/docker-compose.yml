@@ -1,20 +1,28 @@
 name: argos-web
 
+# Hosts and Traefik names come from .env (copy .env.example).
 services:
   argos-web:
-    build: .
+    build:
+      context: .
+      args:
+        VITE_API_URL: ${ARGOS_API_URL:?set ARGOS_API_URL in .env}
     image: argos-web:latest
     container_name: argos-web
     restart: unless-stopped
+    environment:
+      ARGOS_API_URL: ${ARGOS_API_URL}
+      ARGOS_LEGACY_API_URL: ${ARGOS_LEGACY_API_URL:-}
     networks:
       - proxy
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.argos-web.rule=Host(`argos.northernarchive.com`)"
-      - "traefik.http.routers.argos-web.entrypoints=websecure"
-      - "traefik.http.routers.argos-web.tls.certresolver=le"
+      - "traefik.http.routers.argos-web.rule=Host(`${ARGOS_WEB_HOST:?set ARGOS_WEB_HOST in .env}`)"
+      - "traefik.http.routers.argos-web.entrypoints=${TRAEFIK_ENTRYPOINT:-websecure}"
+      - "traefik.http.routers.argos-web.tls.certresolver=${TRAEFIK_CERTRESOLVER:-le}"
       - "traefik.http.services.argos-web.loadbalancer.server.port=80"
 
 networks:
   proxy:
     external: true
+    name: ${TRAEFIK_NETWORK:-proxy}

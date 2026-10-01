@@ -5,7 +5,17 @@ from argos_api.main import create_app
 
 from .conftest import AUTH, FakeEngine, make_settings, triage_body
 
-WIZARD = {"Origin": "https://argos.northernarchive.com"}
+WIZARD = {"Origin": "https://argos.example.com"}
+
+
+@pytest.fixture
+async def client(engine):
+    app = create_app(make_settings(argos_cors_origins=WIZARD["Origin"]), engine)
+    async with app.router.lifespan_context(app):
+        assert app.state.ready.wait(5)
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(transport=transport, base_url="http://test") as c:
+            yield c
 
 
 def allowed(response) -> bool:
@@ -58,7 +68,7 @@ async def test_413_from_body_guard_cross_origin(client):
 
 async def test_503_exposes_retry_after():
     engine = FakeEngine(load_blocks=True)
-    app = create_app(make_settings(), engine)
+    app = create_app(make_settings(argos_cors_origins=WIZARD["Origin"]), engine)
     async with app.router.lifespan_context(app):
         transport = httpx.ASGITransport(app=app)
         async with httpx.AsyncClient(transport=transport, base_url="http://test") as c:
@@ -70,14 +80,14 @@ async def test_503_exposes_retry_after():
     assert "retry-after" in r.headers["access-control-expose-headers"].lower()
 
 
-@pytest.mark.parametrize("origin", ["https://evil.example", "http://argos.northernarchive.com"])
+@pytest.mark.parametrize("origin", ["https://evil.example", "http://argos.example.com"])
 async def test_unlisted_origin_gets_no_cors(client, origin):
     r = await client.get("/health", headers={"Origin": origin})
     assert "access-control-allow-origin" not in r.headers
 
 
-async def test_empty_setting_disables_cors(engine):
-    app = create_app(make_settings(argos_cors_origins=""), engine)
+async def test_cors_off_by_default(engine):
+    app = create_app(make_settings(), engine)
     transport = httpx.ASGITransport(app=app)
     async with httpx.AsyncClient(transport=transport, base_url="http://test") as c:
         r = await c.get("/health", headers=WIZARD)

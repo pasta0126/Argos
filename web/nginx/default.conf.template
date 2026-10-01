@@ -1,0 +1,28 @@
+# Rendered by the nginx image at startup (envsubst): only ${ARGOS_*} variables are replaced.
+server {
+  listen 80;
+  server_name _;
+
+  root /usr/share/nginx/html;
+  index index.html;
+
+  gzip on;
+  gzip_types text/css application/javascript application/json image/svg+xml;
+
+  # Optional 308 redirects of old API paths, generated when ARGOS_LEGACY_API_URL is set
+  # (see 40-argos-legacy-redirects.sh). No file, no redirects.
+  include /etc/nginx/conf.d/legacy-*.inc;
+
+  # Hashed file names: cache forever.
+  location /assets/ {
+    include /etc/nginx/conf.d/security-headers.inc;
+    add_header Cache-Control "public, max-age=31536000, immutable";
+    try_files $uri =404;
+  }
+
+  location / {
+    include /etc/nginx/conf.d/security-headers.inc;
+    add_header Cache-Control "no-cache";
+    try_files $uri $uri/ /index.html;
+  }
+}

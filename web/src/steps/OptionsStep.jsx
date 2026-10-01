@@ -1,4 +1,5 @@
 import { formatNumber } from '../lib/answerView'
+import { DEFAULT_MIN_CONFIDENCE } from '../lib/draft'
 
 export default function OptionsStep({ draft, dispatch }) {
   const on = draft.minConfidence != null
@@ -10,7 +11,7 @@ export default function OptionsStep({ draft, dispatch }) {
         <p>Ajustes opcionales de la petición.</p>
       </div>
       <label className="check" style={{ fontWeight: 600 }}>
-        <input type="checkbox" checked={on} onChange={(e) => set(e.target.checked ? 0.8 : null)} />
+        <input type="checkbox" checked={on} onChange={(e) => set(e.target.checked ? DEFAULT_MIN_CONFIDENCE : null)} />
         Marcar las respuestas con confianza baja
       </label>
       <p className="hint">

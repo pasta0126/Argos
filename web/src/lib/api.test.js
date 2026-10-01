@@ -21,7 +21,7 @@ describe('request', () => {
     const res = await request({ method: 'POST', path: '/v1/decide', body: { text: 'x' }, key: KEY, fetchImpl })
     expect(res).toMatchObject({ ok: true, status: 200, data: { ok: 1 } })
     const [url, init] = fetchImpl.mock.calls[0]
-    expect(url).toBe('/v1/decide')
+    expect(url).toBe('https://argos-api.example.test/v1/decide')
     expect(init.headers.Authorization).toBe(`Bearer ${KEY}`)
     expect(JSON.parse(init.body)).toEqual({ text: 'x' })
   })
@@ -122,7 +122,7 @@ describe('curlFor', () => {
 
   test('uses the public URL and a key placeholder', () => {
     const c = curlFor(req)
-    expect(c).toMatch(/^curl -s -X POST https:\/\/argos-api\.northernarchive\.com\/v1\/decide/)
+    expect(c).toMatch(/^curl -s -X POST https:\/\/argos-api\.example\.test\/v1\/decide/)
     expect(c).toContain('Bearer $ARGOS_KEY')
     expect(c).not.toContain(KEY)
   })

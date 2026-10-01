@@ -12,7 +12,9 @@ the archived changes' `design.md` under `openspec/changes/archive/`; current req
 `openspec/specs/`. Limits, performance numbers and Laya accuracy caveats: `server/README.md`.
 Web wizard at `argos.northernarchive.com` (`web/`, Vite + React static build behind nginx; calls
 the API cross-origin, allowed by `ARGOS_CORS_ORIGINS`; the old API paths on that host 308 to
-the API host). Client-facing API reference with real request/response examples (Spanish): `server/API.md` —
+the API host). Hosts are not hardcoded: they come from `server/.env` (`ARGOS_API_HOST`) and
+`web/.env` (`ARGOS_WEB_HOST`, `ARGOS_API_URL`, `ARGOS_LEGACY_API_URL`); the root README is a
+self-hosting guide for other people's servers. Client-facing API reference with real request/response examples (Spanish): `server/API.md` —
 regenerate its example responses against the live service when the contract or presets change.
 
 ## Commands (run in `server/`; for `web/` see `web/README.md`: `npm test`, `npm run lint`, `npm run build`)

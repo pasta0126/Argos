@@ -21,7 +21,7 @@ class Settings(BaseSettings):
     # Requests allowed to wait while an inference is running; beyond -> 503.
     argos_max_queue: int = 4
     # Comma-separated browser origins allowed to call the API (the web wizard). Empty disables CORS.
-    argos_cors_origins: str = "https://argos.northernarchive.com"
+    argos_cors_origins: str = ""
 
     @field_validator("argos_api_keys")
     @classmethod

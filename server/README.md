@@ -168,11 +168,13 @@ Raspberry Pi 4B, laya 0.3.22, torch 2.14.1+cpu, 3 threads, model revision `55cf4
 
 ## Configuration (`.env`, git-ignored)
 
-Copy `.env.example`. `ARGOS_API_KEYS` is `id:key,id:key` (one per client; generate with
+Copy `.env.example`. `ARGOS_API_HOST` is the public host (Traefik router rule; Compose
+interpolates it from `.env`, as well as the optional `TRAEFIK_NETWORK`,
+`TRAEFIK_ENTRYPOINT` and `TRAEFIK_CERTRESOLVER`). `ARGOS_API_KEYS` is `id:key,id:key` (one per client; generate with
 `openssl rand -hex 32`; remove a pair + restart to revoke). The service refuses to start
 without keys. `ARGOS_MODEL_REVISION` pins the Hugging Face commit; `ARGOS_THREADS`,
-`ARGOS_MAX_QUEUE` tune CPU use and queueing. `ARGOS_CORS_ORIGINS` (comma-separated, default
-`https://argos-api.northernarchive.com`, empty disables) lists the browser origins allowed to
+`ARGOS_MAX_QUEUE` tune CPU use and queueing. `ARGOS_CORS_ORIGINS` (comma-separated; empty, the default,
+disables CORS) lists the browser origins allowed to
 call the API cross-origin — the web wizard; it does not replace the API key.
 
 **Memory limit caveat:** the host kernel boots with `cgroup_disable=memory`, so the

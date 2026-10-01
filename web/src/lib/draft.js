@@ -5,6 +5,8 @@ const uid = () => `id${++nextId}`
 
 export const QUESTION_TYPES = ['choice', 'score', 'yesno']
 
+export const DEFAULT_MIN_CONFIDENCE = 0.8
+
 export function newOption(label = '', description = '') {
   return { id: uid(), label, description }
 }
@@ -35,7 +37,7 @@ export function emptyDraft() {
     presetSubset: [], // checked names
     text: '',
     questions: [],
-    minConfidence: null,
+    minConfidence: DEFAULT_MIN_CONFIDENCE, // low-confidence flag on by default; null = off
   }
 }
 

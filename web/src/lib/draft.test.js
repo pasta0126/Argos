@@ -9,7 +9,7 @@ import fixture from './fixtures/presets.json'
 
 const presetDraft = (name, subset) => {
   const names = Object.keys(fixture.presets[name].questions)
-  return { ...emptyDraft(), mode: 'preset', presetName: name, presetQuestions: names, presetSubset: subset ?? names, text: 'hola' }
+  return { ...emptyDraft(), mode: 'preset', presetName: name, presetQuestions: names, presetSubset: subset ?? names, text: 'hola', minConfidence: null }
 }
 
 describe('buildRequest, preset mode', () => {
@@ -55,8 +55,12 @@ describe('buildRequest, custom mode', () => {
   })
 
   test('threshold off means no min_confidence', () => {
-    const r = buildRequest({ ...emptyDraft(), mode: 'custom', text: 't', questions: [] })
+    const r = buildRequest({ ...emptyDraft(), mode: 'custom', text: 't', questions: [], minConfidence: null })
     expect('min_confidence' in r.body).toBe(false)
+  })
+
+  test('low-confidence threshold is on by default at 0.8', () => {
+    expect(buildRequest({ ...emptyDraft(), text: 't' }).body.min_confidence).toBe(0.8)
   })
 
   test('renaming a question renames the key', () => {

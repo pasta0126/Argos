@@ -12,11 +12,12 @@ services:
       - argos-hf-cache:/data/hf
     networks:
       - proxy
+    # Hosts and Traefik names come from .env (Compose reads it for ${...} interpolation).
     labels:
       - traefik.enable=true
-      - traefik.http.routers.argos-api.rule=Host(`argos-api.northernarchive.com`)
-      - traefik.http.routers.argos-api.entrypoints=websecure
-      - traefik.http.routers.argos-api.tls.certresolver=le
+      - traefik.http.routers.argos-api.rule=Host(`${ARGOS_API_HOST:?set ARGOS_API_HOST in .env}`)
+      - traefik.http.routers.argos-api.entrypoints=${TRAEFIK_ENTRYPOINT:-websecure}
+      - traefik.http.routers.argos-api.tls.certresolver=${TRAEFIK_CERTRESOLVER:-le}
       - traefik.http.services.argos-api.loadbalancer.server.port=8080
 
 volumes:
@@ -25,3 +26,4 @@ volumes:
 networks:
   proxy:
     external: true
+    name: ${TRAEFIK_NETWORK:-proxy}

@@ -143,7 +143,12 @@ empty option label or description, or a yes/no with only one description filled.
 
 ### Requirement: Options step
 The options step SHALL let the user set or leave unset `min_confidence` (0.0–1.0),
-explaining that it only flags answers and never hides them.
+explaining that it only flags answers and never hides them. The flag SHALL be on by
+default with a threshold of 0.8.
+
+#### Scenario: Flag on by default
+- **WHEN** a new request is started
+- **THEN** the low-confidence option is checked and the payload has `min_confidence` 0.8
 
 #### Scenario: Threshold unset
 - **WHEN** the user leaves the threshold off
