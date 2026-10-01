@@ -1,6 +1,14 @@
 # Secrets / local env
 **/.env
+**/.env.*
 !**/.env.example
+*.pem
+*.key
+
+# Postman / newman: exported environments and globals can hold the API key
+*.postman_environment.json
+*.postman_globals.json
+newman/
 
 # Python
 __pycache__/
@@ -8,3 +16,32 @@ __pycache__/
 .venv/
 venv/
 .pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+.coverage.*
+htmlcov/
+*.egg-info/
+build/
+dist/
+
+# Node (npx openspec / newman)
+node_modules/
+
+# Local Hugging Face cache, if run outside Docker
+.cache/
+hf-cache/
+
+# Claude Code: per-user settings (commands/skills are shared and tracked)
+.claude/settings.local.json
+
+# Logs
+*.log
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*~
