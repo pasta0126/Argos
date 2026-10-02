@@ -1,4 +1,5 @@
-import { MAX_OPTIONS, MAX_QUESTIONS, MAX_TEXT_CHARS, MIN_OPTIONS, textLength } from './limits'
+import { MAX_OPTIONS, MAX_QUESTION_CHARS, MAX_QUESTIONS, MAX_TEXT_CHARS, MIN_OPTIONS, textLength } from './limits'
+import { ORACLES } from './oracles'
 
 const blank = (s) => !s || !s.trim()
 
@@ -11,6 +12,15 @@ export function validate(draft) {
   const err = (step, field, message, qid) => errors.push({ step, field, message, ...(qid ? { qid } : {}) })
 
   if (!draft.mode) err('mode', 'mode', 'Elige un preset, una petición personalizada o un ejemplo.')
+
+  if (draft.mode === 'oracle') {
+    if (!(draft.oracleName in ORACLES)) err('mode', 'oracle', 'Elige un oráculo.')
+    if (blank(draft.text)) err('text', 'question', 'La pregunta es obligatoria.')
+    else if (textLength(draft.text) > MAX_QUESTION_CHARS)
+      err('text', 'question', `La pregunta supera el máximo de ${MAX_QUESTION_CHARS} caracteres.`)
+    // No threshold check: oracle requests never send min_confidence.
+    return errors
+  }
 
   if (blank(draft.text)) err('text', 'text', 'El texto es obligatorio.')
   else if (textLength(draft.text) > MAX_TEXT_CHARS)

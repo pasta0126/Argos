@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { MAX_OPTIONS, MAX_QUESTIONS } from '../lib/limits'
+import { KIND_LABELS, ORACLES, PHRASES } from '../lib/oracles'
 import { Errors } from './TextStep'
 
 export const TYPE_INFO = {
@@ -18,10 +19,47 @@ export const TYPE_INFO = {
 }
 
 export default function QuestionsStep({ draft, presets, dispatch, errors, focusQid }) {
+  if (draft.mode === 'oracle') return <OracleQuestions name={draft.oracleName} />
   return draft.mode === 'preset' ? (
     <PresetQuestions draft={draft} preset={presets?.[draft.presetName]} dispatch={dispatch} errors={errors} />
   ) : (
     <CustomQuestions draft={draft} dispatch={dispatch} errors={errors} focusQid={focusQid} />
+  )
+}
+
+function OracleQuestions({ name }) {
+  const o = ORACLES[name]
+  if (!o) return <p>Oráculo no disponible.</p>
+  return (
+    <div>
+      <div className="step-head">
+        <h2>La pregunta del oráculo</h2>
+        <p>Es fija: no hay nada que editar ni elegir. Tu pregunta es el texto que lee el modelo.</p>
+      </div>
+      <div className="oracle oracle-fixed">
+        <p>
+          <span className="type-badge">{name === 'yesno' ? 'Sí / No' : `Escala de ${PHRASES.length} frases`}</span>
+        </p>
+        <p className="oracle-instructions">{o.instructions}</p>
+        {name === 'yesno' ? (
+          <p className="hint">Devuelve sí o no, la probabilidad de «sí» y la confianza. Sin umbral de confianza.</p>
+        ) : (
+          <>
+            <p className="hint">
+              Las frases forman una escala, de la más negativa a la más afirmativa. Gana la más probable; verás el porcentaje de
+              cada una y los totales por clase.
+            </p>
+            <ol className="phrase-list">
+              {PHRASES.map(([phrase, kind]) => (
+                <li key={phrase} className={`kind-${kind}`} title={KIND_LABELS[kind]}>
+                  {phrase}
+                </li>
+              ))}
+            </ol>
+          </>
+        )}
+      </div>
+    </div>
   )
 }
 

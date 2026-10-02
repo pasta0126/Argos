@@ -38,7 +38,10 @@ class FakeEngine:
                 probs = {label: (0.7 if i == 0 else 0.3 / (len(labels) - 1)) for i, label in enumerate(labels)}
                 answers[name] = {"choice": labels[0], "probabilities": probs, "confidence": 0.7}
             elif q.type == "score":
-                answers[name] = {"score": 1.2, "level": q.criteria[1], "probabilities": [0.2, 0.4, 0.4][: len(q.criteria)], "confidence": 0.4}
+                # One probability per level, peaking at level 1 (the second).
+                n = len(q.criteria)
+                probs = [0.4 if i == 1 else round(0.6 / (n - 1), 4) for i in range(n)]
+                answers[name] = {"score": 1.2, "level": q.criteria[1], "probabilities": probs, "confidence": 0.4}
             else:
                 answers[name] = {"probability": 0.9, "answer": True, "confidence": 0.9}
             if min_confidence is not None:

@@ -6,7 +6,7 @@ probabilidad. Por dentro usa el modelo de decisión [Laya](https://laya.convaiin
 (`laya-multilingual`), que no genera texto: solo elige entre las respuestas que le das.
 
 Todas las respuestas de ejemplo de este documento son **respuestas reales** del servicio
-(1 de octubre de 2026, modelo revisión `55cf4c4e`). Los cuerpos de petición están también como
+(1 de octubre de 2026, las del oráculo el 2 de octubre; modelo revisión `55cf4c4e`). Los cuerpos de petición están también como
 archivos en [`examples/`](examples/), listos para `curl -d @archivo.json` o para copiar en
 Postman o Swagger.
 
@@ -15,6 +15,7 @@ Postman o Swagger.
 - [`POST /v1/decide`](#post-v1decide): responder tus propias preguntas sobre un texto
 - [`GET /v1/presets`](#get-v1presets): ver los conjuntos de preguntas ya preparados
 - [Endpoints de presets](#endpoints-de-presets): `POST /v1/presets/triage`, `/guard`, `/email`, `/moderation`, `/router`
+- [Oráculo](#oráculo): `POST /v1/oracle/yesno` y `/v1/oracle/8ball`, solo una pregunta
 - [Errores](#errores)
 - [Escribir buenas preguntas](#escribir-buenas-preguntas)
 
@@ -40,6 +41,8 @@ Postman o Swagger.
 | `POST` | `/v1/presets/email` | Preset `email`: correos entrantes | Sí |
 | `POST` | `/v1/presets/moderation` | Preset `moderation`: comentarios de usuarios | Sí |
 | `POST` | `/v1/presets/router` | Preset `router`: peticiones a un modelo de lenguaje | Sí |
+| `POST` | `/v1/oracle/yesno` | Oráculo: responde sí o no a una pregunta | Sí |
+| `POST` | `/v1/oracle/8ball` | Oráculo: bola 8 mágica, 20 frases con su porcentaje | Sí |
 
 Ejemplo con curl (el resto de ejemplos solo muestran el cuerpo JSON):
 
@@ -634,6 +637,148 @@ tiene (el error indica las válidas) y, solo en la ruta genérica, `404` si el p
 
 ---
 
+## Oráculo
+
+Dos endpoints de juguete: solo envías una pregunta y el oráculo responde. La pregunta es el
+único texto que lee el modelo; la instrucción es fija. En Swagger están en el grupo **oracle**.
+No aparecen en `GET /v1/presets`.
+
+| Endpoint | Instrucción fija | Responde | Tiempo |
+|---|---|---|---|
+| `POST /v1/oracle/yesno` | «¿La respuesta a esta pregunta es sí?» (`yesno`) | sí o no, con su probabilidad | ~1,2 s |
+| `POST /v1/oracle/8ball` | «¿Cómo de probable es que la respuesta a esta pregunta sea afirmativa?» sobre una escala de 20 frases | la frase de la bola 8 más probable y el porcentaje de cada una | ~4 s |
+
+- **Siempre responde.** El oráculo no comprueba si la pregunta se contesta con sí o no
+  (el modelo no lo distingue bien). Una pregunta abierta también recibe un sí o un no: haz
+  preguntas de sí o no.
+- **Es determinista.** La misma pregunta da siempre la misma respuesta: es un oráculo con
+  opinión fija, no un dado.
+- **Sin umbral de confianza.** No acepta `min_confidence` y nunca devuelve `low_confidence`.
+- Misma autenticación, cola y `503` que el resto de la API. La pregunta no se registra en los logs.
+
+### Cuerpo de la petición
+
+| Campo | Tipo | Obligatorio | Descripción |
+|---|---|---|---|
+| `question` | string | Sí | La pregunta. 1–500 caracteres |
+
+Cualquier otro campo (`min_confidence`, `text`, `instructions`…) da `422`.
+
+### Respuesta de `/v1/oracle/yesno`
+
+| Campo | Tipo | Descripción |
+|---|---|---|
+| `answer` | booleano | `true` (sí) si `probability` ≥ 0,5 |
+| `probability` | número 0–1 | Probabilidad de «sí» |
+| `confidence` | número 0–1 | Probabilidad de la respuesta dada (`max(p, 1 − p)`) |
+| `model` | string | Modelo usado |
+| `latency_ms` | entero | Tiempo de inferencia en el servidor |
+
+### Respuesta de `/v1/oracle/8ball`
+
+| Campo | Tipo | Descripción |
+|---|---|---|
+| `answer` | string | La frase con mayor porcentaje (si empatan, la primera en el orden de la escala) |
+| `kind` | string | Clase de esa frase: `affirmative`, `non_committal` o `negative` |
+| `phrases` | lista | Las 20 frases, siempre en el mismo orden (de la más negativa a la más afirmativa), con `phrase`, `kind` y `percentage` (0–100, un decimal; suman 100) |
+| `totals` | objeto | Suma de porcentajes de cada clase: `affirmative`, `non_committal`, `negative` |
+| `model`, `latency_ms` | | Como en el resto de la API |
+
+Las 20 frases: 5 negativas (*No cuentes con ello*, *Mi respuesta es no*, *Mis fuentes dicen
+que no*, *Las perspectivas no son muy buenas*, *Muy dudoso*), 5 neutras (*Respuesta confusa,
+vuelve a intentarlo*, *Vuelve a preguntar más tarde*, *Mejor no decírtelo ahora*, *No se
+puede predecir ahora*, *Concéntrate y vuelve a preguntar*) y 10 afirmativas (*Las señales
+apuntan a que sí*, *Buenas perspectivas*, *Lo más probable*, *Tal y como yo lo veo, sí*,
+*Sí*, *Puedes confiar en ello*, *Sí, definitivamente*, *Es decididamente así*, *Sin lugar a
+dudas*, *Es cierto*).
+
+La frase ganadora no suele pasar del 10–15 %: mira también `totals` para saber cómo de
+«segura» está la bola.
+
+### Ejemplo 1: sí/no
+
+[`examples/oracle-yesno.json`](examples/oracle-yesno.json) → `POST /v1/oracle/yesno`
+
+```json
+{"question": "¿Me saldrá bien el examen de mañana?"}
+```
+
+```json
+{
+  "answer": true,
+  "probability": 0.6311,
+  "confidence": 0.6311,
+  "model": "laya-multilingual",
+  "latency_ms": 1215
+}
+```
+
+### Ejemplo 2: pregunta abierta
+
+`{"question": "¿Qué color de coche me compro?"}` → `POST /v1/oracle/yesno`. No es una
+pregunta de sí o no, pero el oráculo responde igualmente:
+
+```json
+{
+  "answer": false,
+  "probability": 0.2113,
+  "confidence": 0.7887,
+  "model": "laya-multilingual",
+  "latency_ms": 1179
+}
+```
+
+### Ejemplo 3: bola 8
+
+[`examples/oracle-8ball.json`](examples/oracle-8ball.json) → `POST /v1/oracle/8ball`
+
+```json
+{"question": "¿Me tocará la lotería este año?"}
+```
+
+```json
+{
+  "answer": "Sin lugar a dudas",
+  "kind": "affirmative",
+  "phrases": [
+    {"phrase": "No cuentes con ello", "kind": "negative", "percentage": 1.9},
+    {"phrase": "Mi respuesta es no", "kind": "negative", "percentage": 6.2},
+    {"phrase": "Mis fuentes dicen que no", "kind": "negative", "percentage": 10.5},
+    {"phrase": "Las perspectivas no son muy buenas", "kind": "negative", "percentage": 3.5},
+    {"phrase": "Muy dudoso", "kind": "negative", "percentage": 2.9},
+    {"phrase": "Respuesta confusa, vuelve a intentarlo", "kind": "non_committal", "percentage": 2.8},
+    {"phrase": "Vuelve a preguntar más tarde", "kind": "non_committal", "percentage": 1.9},
+    {"phrase": "Mejor no decírtelo ahora", "kind": "non_committal", "percentage": 1.4},
+    {"phrase": "No se puede predecir ahora", "kind": "non_committal", "percentage": 3.8},
+    {"phrase": "Concéntrate y vuelve a preguntar", "kind": "non_committal", "percentage": 6.7},
+    {"phrase": "Las señales apuntan a que sí", "kind": "affirmative", "percentage": 1.8},
+    {"phrase": "Buenas perspectivas", "kind": "affirmative", "percentage": 2.3},
+    {"phrase": "Lo más probable", "kind": "affirmative", "percentage": 4.6},
+    {"phrase": "Tal y como yo lo veo, sí", "kind": "affirmative", "percentage": 9.0},
+    {"phrase": "Sí", "kind": "affirmative", "percentage": 5.7},
+    {"phrase": "Puedes confiar en ello", "kind": "affirmative", "percentage": 1.8},
+    {"phrase": "Sí, definitivamente", "kind": "affirmative", "percentage": 4.9},
+    {"phrase": "Es decididamente así", "kind": "affirmative", "percentage": 10.9},
+    {"phrase": "Sin lugar a dudas", "kind": "affirmative", "percentage": 12.7},
+    {"phrase": "Es cierto", "kind": "affirmative", "percentage": 4.7}
+  ],
+  "totals": {"affirmative": 58.4, "non_committal": 16.6, "negative": 25.0},
+  "model": "laya-multilingual",
+  "latency_ms": 3868
+}
+```
+
+### Errores del oráculo
+
+| Código | Cuándo |
+|---|---|
+| `401` | Sin clave o clave incorrecta |
+| `413` | `question` de más de 500 caracteres: `{"detail": "question exceeds 500 characters"}` |
+| `422` | Falta `question`, está vacía o hay otro campo. Con `min_confidence`: `{"detail": [{"type": "extra_forbidden", "loc": ["body", "min_confidence"], "msg": "Extra inputs are not permitted", "input": 0.8}]}` |
+| `503` | Modelo cargando o servidor saturado, con `Retry-After` |
+
+---
+
 ## Errores
 
 Todos los errores son JSON. Los que no vienen de la validación tienen un campo `detail` con
@@ -643,7 +788,7 @@ el motivo en texto.
 |---|---|---|
 | `401` | Falta la cabecera `Authorization` o la clave no es válida | `{"detail": "missing or invalid API key"}` + cabecera `WWW-Authenticate: Bearer` |
 | `404` | Ruta genérica `POST /v1/presets/{name}` con un preset que no existe | `{"detail": "unknown preset 'horoscope'"}` |
-| `413` | Texto > 8.000 caracteres, > 10 preguntas, > 20 opciones en una pregunta o cuerpo > 64 KiB | `{"detail": "text exceeds 8000 characters"}` (el motivo cambia según el límite) |
+| `413` | Texto > 8.000 caracteres, > 10 preguntas, > 20 opciones en una pregunta, pregunta del oráculo > 500 caracteres o cuerpo > 64 KiB | `{"detail": "text exceeds 8000 characters"}` (el motivo cambia según el límite) |
 | `422` | Cuerpo mal formado: falta un campo, tipo de pregunta desconocido, `criteria` incorrecto, campo no permitido… | Lista de errores; `loc` indica dónde (ver abajo) |
 | `503` | El modelo está cargando, o ya hay una inferencia en curso y 4 esperando | `{"status": "loading"}` o `{"status": "busy"}` + cabecera `Retry-After: 5` |
 
@@ -725,5 +870,7 @@ medido (más detalle en el [README](README.md#using-laya-well) y en [TESTING.md]
 | `preset-moderation.json` | `POST /v1/presets/moderation` | preset completo |
 | `preset-router.json` | `POST /v1/presets/router` | preset completo |
 | `preset-guard-subset.json` | `POST /v1/presets/guard` | subconjunto de preguntas |
+| `oracle-yesno.json` | `POST /v1/oracle/yesno` | oráculo sí/no |
+| `oracle-8ball.json` | `POST /v1/oracle/8ball` | bola 8 |
 
 Todos están también en la colección de Postman [`postman/argos.postman_collection.json`](postman/argos.postman_collection.json).

@@ -111,8 +111,8 @@ Si el dominio del wizard servía antes la API, define también `ARGOS_LEGACY_API
 `web/.env` para que sus rutas antiguas (`/v1/*`, `/health`, `/docs`…) respondan `308` a la
 nueva URL.
 
-En el wizard eliges preguntas personalizadas o uno de los presets, escribes el texto y
-envías. Mientras rellenas los pasos se ve el JSON que se enviará. En el resultado tienes
+En el wizard eliges preguntas personalizadas, uno de los presets o un oráculo, escribes el
+texto (o la pregunta) y envías. Mientras rellenas los pasos se ve el JSON que se enviará. En el resultado tienes
 barras de probabilidad, el JSON enviado, el JSON recibido y el `curl` equivalente, y en
 todo momento se ve qué está pasando: modelo cargando, enviando, servidor ocupado (con
 reintento automático) o el motivo de un error.
@@ -156,11 +156,12 @@ curl -s https://argos-api.tu-dominio.com/v1/decide \
 | `POST /v1/decide` | Responde tus propias preguntas sobre un texto |
 | `GET /v1/presets` | Lista los conjuntos de preguntas ya preparados |
 | `POST /v1/presets/{triage,guard,email,moderation,router}` | Responde un preset (solo envías el texto) |
+| `POST /v1/oracle/{yesno,8ball}` | Oráculo de juguete: solo envías una pregunta; responde sí/no o con una frase de la bola 8 |
 | `GET /health` | Indica si el modelo está cargado (público) |
 | `GET /docs` | Swagger: documentación interactiva |
 
 Todo `/v1/*` requiere `Authorization: Bearer <clave>`. Límites: 8.000 caracteres de texto,
-10 preguntas y 20 opciones por pregunta.
+10 preguntas y 20 opciones por pregunta; 500 caracteres por pregunta del oráculo.
 
 Referencia completa con peticiones y respuestas reales: [`server/API.md`](server/API.md).
 Colección de Postman: [`server/postman/`](server/postman/).

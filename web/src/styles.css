@@ -1325,3 +1325,299 @@ a.btn.github {
 a.btn.github:hover {
   color: var(--text);
 }
+
+/* ---------- oracle theme ----------
+   Scoped tokens: deep indigo/violet surfaces, gold accent, one colour per 8-Ball class.
+   Light and dark variants follow the wizard's colour scheme, like the :root tokens. */
+
+.oracle {
+  --o-bg: #f1ecfb;
+  --o-surface: #faf8ff;
+  --o-border: #d6cbef;
+  --o-text: #1e1340;
+  --o-text-2: #4a3d73;
+  --o-gold: #8a6100;
+  --o-gold-soft: #f6ead0;
+  --o-affirmative: #2e8049;
+  --o-non_committal: #6c5fa3;
+  --o-negative: #c2442b;
+  --o-track: #e4dcf5;
+  --o-ball: #0e0a1c;
+  --o-window: #23307a;
+  --o-window-text: #f3f0ff;
+}
+
+@media (prefers-color-scheme: dark) {
+  .oracle {
+    --o-bg: #18122c;
+    --o-surface: #211a3b;
+    --o-border: #3d3266;
+    --o-text: #f4f0ff;
+    --o-text-2: #c6bce6;
+    --o-gold: #e9c45c;
+    --o-gold-soft: #3a2f16;
+    --o-affirmative: #62c98b;
+    --o-non_committal: #a397d6;
+    --o-negative: #f2805f;
+    --o-track: #2e2650;
+    --o-ball: #05030b;
+    --o-window: #2b3a98;
+    --o-window-text: #ffffff;
+  }
+}
+
+.oracle-group {
+  margin-top: 22px;
+  padding: 16px;
+  border-radius: var(--radius);
+  background: var(--o-bg);
+  border: 1px solid var(--o-border);
+  color: var(--o-text);
+}
+
+.oracle-group h3 {
+  font-size: 1.05rem;
+  letter-spacing: 0.04em;
+}
+
+.oracle-group h3 span {
+  color: var(--o-gold);
+}
+
+.oracle-group > p {
+  margin: 2px 0 12px;
+  color: var(--o-text-2);
+  font-size: 0.9rem;
+}
+
+.choices.grid-2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+@media (max-width: 520px) {
+  .choices.grid-2 {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.oracle .choice-card {
+  background: var(--o-surface);
+  border-color: var(--o-border);
+  color: var(--o-text);
+}
+
+.oracle .choice-card small {
+  color: var(--o-text-2);
+}
+
+.oracle .choice-card .meta {
+  color: var(--o-text-2);
+}
+
+.oracle .choice-card strong span {
+  color: var(--o-gold);
+}
+
+.oracle .choice-card:hover,
+.oracle .choice-card[aria-pressed='true'] {
+  border-color: var(--o-gold);
+}
+
+.oracle .choice-card[aria-pressed='true'] {
+  background: var(--o-gold-soft);
+  box-shadow: 0 0 0 1px var(--o-gold);
+}
+
+textarea.short {
+  min-height: 90px;
+}
+
+.check.disabled {
+  cursor: not-allowed;
+  color: var(--text-3);
+}
+
+/* Fixed question (questions step) */
+.oracle-fixed {
+  padding: 14px 16px;
+  border-radius: 10px;
+  background: var(--o-bg);
+  border: 1px solid var(--o-border);
+  color: var(--o-text);
+}
+
+.oracle-fixed p {
+  margin: 0 0 8px;
+}
+
+.oracle-fixed .hint {
+  color: var(--o-text-2);
+}
+
+.oracle-instructions {
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.phrase-list {
+  margin: 8px 0 0;
+  padding-left: 28px;
+  columns: 2 220px;
+  font-size: 0.9rem;
+}
+
+.phrase-list li {
+  margin-bottom: 2px;
+  break-inside: avoid;
+}
+
+.phrase-list li::marker {
+  color: var(--o-kind);
+  font-weight: 700;
+}
+
+.kind-affirmative {
+  --o-kind: var(--o-affirmative);
+}
+
+.kind-non_committal {
+  --o-kind: var(--o-non_committal);
+}
+
+.kind-negative {
+  --o-kind: var(--o-negative);
+}
+
+/* Results */
+.oracle-result {
+  padding: 22px 18px;
+  border-radius: var(--radius);
+  background: var(--o-bg);
+  border: 1px solid var(--o-border);
+  color: var(--o-text);
+}
+
+.oracle-question {
+  margin: 0 0 14px;
+  text-align: center;
+  font-style: italic;
+  color: var(--o-text-2);
+  overflow-wrap: anywhere;
+}
+
+.oracle-verdict {
+  text-align: center;
+  font-size: clamp(3.5rem, 14vw, 6rem);
+  font-weight: 800;
+  line-height: 1.05;
+  margin-bottom: 18px;
+  letter-spacing: 0.02em;
+}
+
+.oracle-verdict.yes {
+  color: var(--o-affirmative);
+}
+
+.oracle-verdict.no {
+  color: var(--o-negative);
+}
+
+.oracle-note {
+  margin: 12px 0 0;
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--o-text-2);
+}
+
+.oracle-result .split .yes {
+  background: var(--o-affirmative);
+}
+
+.oracle-result .split .no {
+  background: var(--o-negative);
+}
+
+.ball {
+  width: min(260px, 70vw);
+  aspect-ratio: 1;
+  margin: 0 auto 20px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 32% 28%, #4b4466 0%, var(--o-ball) 45%, var(--o-ball) 100%);
+  box-shadow: 0 10px 30px rgb(10 6 30 / 0.35), inset 0 -10px 30px rgb(0 0 0 / 0.5);
+  display: grid;
+  place-items: center;
+}
+
+.ball-window {
+  width: 62%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--o-window) 55%, #0b0f33 100%);
+  border: 3px solid var(--o-kind);
+  display: grid;
+  place-items: center;
+  padding: 12px;
+  text-align: center;
+}
+
+.ball-window span {
+  color: var(--o-window-text);
+  font-weight: 700;
+  font-size: 0.98rem;
+  line-height: 1.2;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.oracle-totals {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.oracle-total {
+  text-align: center;
+  padding: 8px 4px;
+  border-radius: 10px;
+  background: var(--o-surface);
+  border: 1px solid var(--o-border);
+  border-top: 4px solid var(--o-kind);
+}
+
+.oracle-total b {
+  display: block;
+  font-size: 1.2rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.oracle-total span {
+  font-size: 0.8rem;
+  color: var(--o-text-2);
+}
+
+.oracle-bars .bar-row .pct {
+  color: var(--o-text-2);
+}
+
+.oracle-bars .bar-row.winner .pct,
+.oracle-bars .bar-row.winner .label {
+  color: var(--o-text);
+}
+
+.oracle-bars .track {
+  background: var(--o-track);
+}
+
+.oracle-bars .fill,
+.oracle-bars .winner .fill {
+  background: var(--o-kind);
+}
+
+.oracle-bars .bar-row:not(.winner) .fill {
+  opacity: 0.75;
+}
+
+.oracle-bars .winner .label span {
+  color: var(--o-gold);
+}

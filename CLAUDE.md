@@ -50,6 +50,10 @@ weights volume gets root-owned files). Install `torch` from the CPU index
   `evals/presets.jsonl` is a report, not a gate (real model, inside the image; command in
   `server/README.md`). Rerun it and update the README accuracy table after touching presets,
   `laya` or the model revision.
+- `oracle.py` — the two question-only endpoints (`/v1/oracle/yesno`, `/v1/oracle/8ball`): fixed
+  questions and pure answer mapping (8-Ball = argmax over 20 phrases, largest-remainder
+  percentages). Routes in `main.py` go through `run_decision`; `web/src/lib/oracles.js` mirrors
+  the phrases and wordings. Report: `evals/run_oracle.py` (command in `server/README.md`).
 - `auth.py` — `ARGOS_API_KEYS="id:key,..."`; the id is logged, request text never is.
 
 ## Deployment target

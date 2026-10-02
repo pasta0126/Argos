@@ -1,5 +1,7 @@
 import { describe, expect, test } from 'vitest'
-import { answerKind, answerView, formatPct } from './answerView'
+import { answerKind, answerView, eightBallView, formatPct, oracleYesNoView } from './answerView'
+import oracleFixture from './fixtures/oracle.json'
+import { PHRASES } from './oracles'
 
 describe('formatPct', () => {
   test.each([
@@ -56,5 +58,30 @@ describe('answerView', () => {
     expect(answerKind({ choice: 'a' })).toBe('choice')
     expect(answerKind({ level: 'a', score: 1 })).toBe('score')
     expect(answerKind({ probability: 0.2 })).toBe('yesno')
+  })
+})
+
+describe('oracle views', () => {
+  test('yes/no shows a big Sí and 82 % (spec scenario)', () => {
+    const v = oracleYesNoView(oracleFixture.yesno)
+    expect(v.label).toBe('Sí')
+    expect(v.yesPct).toBe('82 %')
+    expect(v.noPct).toBe('18 %')
+    expect(oracleYesNoView({ ...oracleFixture.yesno, answer: false, probability: 0.3 }).label).toBe('No')
+  })
+
+  test('8-Ball: winner, 20 bars in scale order coloured by kind, totals (spec scenario)', () => {
+    const v = eightBallView(oracleFixture['8ball'])
+    expect(v.answer).toBe('Sin lugar a dudas')
+    expect(v.rows).toHaveLength(20)
+    expect(v.rows.map((r) => [r.phrase, r.kind])).toEqual(PHRASES)
+    expect(v.rows.filter((r) => r.winner).map((r) => r.index)).toEqual([18])
+    expect(v.rows[18]).toMatchObject({ pct: '12,7 %', width: 100 })
+    expect(v.rows[0].width).toBeCloseTo((3.1 / 12.7) * 100)
+    expect(v.totals.map((t) => [t.kind, t.pct])).toEqual([
+      ['affirmative', '64,1 %'],
+      ['non_committal', '19,3 %'],
+      ['negative', '16,6 %'],
+    ])
   })
 })

@@ -9,6 +9,15 @@ Pasos: clave → modo (personalizado por defecto, o uno de los presets) → text
 preguntas → opciones (`min_confidence`) → revisar y enviar → resultado (Visual · Payload ·
 Respuesta · curl).
 
+Debajo de los presets está el grupo **Oráculo**, con su propio tema (claro y oscuro):
+`POST /v1/oracle/yesno` (sí o no) y `POST /v1/oracle/8ball` (bola 8 mágica). En modo oráculo
+el paso de texto pide la pregunta (máximo 500 caracteres; el oráculo sí/no avisa de que hay
+que preguntar algo que se conteste con sí o no), el de preguntas muestra la instrucción fija
+(y las 20 frases de la bola), y el umbral de confianza queda desmarcado y deshabilitado: la
+petición es solo `{"question": ...}`. Al volver a personalizado o a un preset se recupera el
+umbral que tenías. El resultado es un Sí / No grande, o la bola con la frase ganadora, una
+barra por frase coloreada por clase y los totales afirmativo, neutro y negativo.
+
 La clave API se guarda solo en el navegador: `sessionStorage` por defecto, `localStorage`
 si se marca «Recordar». Nunca aparece en el JSON ni en el curl mostrados (`$ARGOS_KEY`).
 
@@ -33,7 +42,8 @@ La lógica está en `src/lib/` (funciones puras, con tests): `draft.js` (borrado
 petición exacta, `buildRequest`), `validate.js` (mismos límites que
 `server/argos_api/schemas.py`; si cambian allí, cámbialos en `limits.js`), `api.js`
 (llamadas, reintentos ante `503` con `Retry-After`, mensajes de error en español, curl),
-`answerView.js` (respuesta → barras).
+`answerView.js` (respuesta → barras, también las vistas del oráculo) y `oracles.js` (los
+dos oráculos, sus frases y la duración estimada; copia de `server/argos_api/oracle.py`).
 
 ## Despliegue
 

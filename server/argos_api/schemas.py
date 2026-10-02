@@ -7,6 +7,7 @@ from pydantic import BaseModel, ConfigDict, Field, create_model, field_validator
 MAX_TEXT_CHARS = 8000
 MAX_QUESTIONS = 10
 MAX_OPTIONS = 20
+MAX_QUESTION_CHARS = 500  # oracle questions
 
 NonEmpty = Annotated[str, Field(min_length=1)]
 
@@ -83,6 +84,46 @@ def preset_request_model(name: str, question_names: list[str], example: str) -> 
         __base__=WithExample,
         questions=(Annotated[list[Literal[tuple(question_names)]], Field(min_length=1)] | None, None),
     )
+
+
+class OracleRequest(BaseModel):
+    """Oracle body: only the question. Instructions and answers are fixed, and there is no
+    confidence threshold, so `min_confidence`, `text` or `instructions` are a 422."""
+
+    model_config = ConfigDict(
+        extra="forbid", json_schema_extra={"examples": [{"question": "¿Me saldrá bien el examen?"}]}
+    )
+
+    question: NonEmpty
+
+
+class YesNoOracleResponse(BaseModel):
+    answer: bool
+    probability: float
+    confidence: float
+    model: str
+    latency_ms: int
+
+
+class EightBallPhrase(BaseModel):
+    phrase: str
+    kind: Literal["affirmative", "non_committal", "negative"]
+    percentage: float
+
+
+class EightBallTotals(BaseModel):
+    affirmative: float
+    non_committal: float
+    negative: float
+
+
+class EightBallResponse(BaseModel):
+    answer: str
+    kind: Literal["affirmative", "non_committal", "negative"]
+    phrases: list[EightBallPhrase]
+    totals: EightBallTotals
+    model: str
+    latency_ms: int
 
 
 def limit_violation(req: DecideRequest) -> str | None:

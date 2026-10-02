@@ -30,3 +30,22 @@ test('toggle subset and move question', () => {
   d = draftReducer(d, { type: 'moveQuestion', id: d.questions[1].id, delta: -1 })
   expect(d.questions.map((q) => q.type)).toEqual(['score', 'choice'])
 })
+
+test('choosing an oracle keeps the flag, and custom gets it back (spec scenario)', () => {
+  let d = run([{ type: 'patch', patch: { minConfidence: 0.65, text: '¿Lloverá?' } }, { type: 'chooseOracle', name: '8ball' }])
+  expect(d.mode).toBe('oracle')
+  expect(d.oracleName).toBe('8ball')
+  expect(buildRequest(d)).toEqual({ method: 'POST', path: '/v1/oracle/8ball', body: { question: '¿Lloverá?' } })
+  d = draftReducer(d, { type: 'chooseCustom' })
+  expect(d.mode).toBe('custom')
+  expect(d.oracleName).toBe(null)
+  expect(d.minConfidence).toBe(0.65)
+  expect(buildRequest(d).body.min_confidence).toBe(0.65)
+})
+
+test('choosing a preset leaves oracle mode', () => {
+  const d = run([{ type: 'chooseOracle', name: 'yesno' }, { type: 'choosePreset', name: 'guard', questions: ['a'] }])
+  expect(d.mode).toBe('preset')
+  expect(d.oracleName).toBe(null)
+  expect(buildRequest(d).path).toBe('/v1/presets/guard')
+})

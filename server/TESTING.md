@@ -165,6 +165,31 @@ Las respuestas completas, con probabilidades, están en [`API.md`](API.md#endpoi
   `"questions": ["jailbreak"]`: es bastante más rápido.
 - Una pregunta que el preset no tiene da `422` y el error lista las válidas.
 
+## 5b. Oráculo: solo una pregunta
+
+Dos endpoints de juguete en el grupo **oracle** de Swagger (carpeta **Oráculo** de Postman).
+Solo se envía `{"question": "..."}` (máximo 500 caracteres). La instrucción es fija y no hay
+umbral de confianza.
+
+| Endpoint | Responde | Tarda |
+|---|---|---|
+| `POST /v1/oracle/yesno` | `answer` (sí/no), `probability` (P(sí)) y `confidence` | ~1–1,5 s |
+| `POST /v1/oracle/8ball` | la frase ganadora de las 20 de la bola 8, el porcentaje de cada una (suman 100) y los totales afirmativo, neutro y negativo | ~4 s |
+
+```bash
+curl -s https://argos-api.northernarchive.com/v1/oracle/8ball \
+  -H "Authorization: Bearer $ARGOS_KEY" \
+  -H 'Content-Type: application/json' \
+  -d '{"question": "¿Me tocará la lotería este año?"}'
+```
+
+- **No hay respuesta correcta**: comprueba la forma de la respuesta, no lo que dice. La
+  misma pregunta da siempre la misma respuesta.
+- El oráculo sí/no responde sí o no **a cualquier pregunta**, también a las abiertas
+  ("¿Qué color de coche me compro?"). No es un fallo: hacer preguntas de sí o no es cosa de
+  quien pregunta.
+- `min_confidence`, `text` o cualquier otro campo dan `422`; más de 500 caracteres, `413`.
+
 ## 6. Errores que deberías poder reproducir
 
 Están en la carpeta **Errores** de Postman.
@@ -174,7 +199,7 @@ Están en la carpeta **Errores** de Postman.
 | `401` | Falta la API key o es incorrecta | Quita la cabecera `Authorization` |
 | `404` | Preset que no existe | `POST /v1/presets/horoscope` |
 | `422` | JSON mal formado o campo inválido; el cuerpo indica el campo | `"type": "maybe"`, falta `instructions`, un campo desconocido, una pregunta que el preset no tiene… |
-| `413` | Supera los límites | Texto > 8.000 caracteres, > 10 preguntas, > 20 opciones |
+| `413` | Supera los límites | Texto > 8.000 caracteres, > 10 preguntas, > 20 opciones, pregunta del oráculo > 500 caracteres |
 | `503` | Modelo cargando (`loading`) o servidor saturado (`busy`) | Llamar justo tras un reinicio, o > 5 peticiones simultáneas. Respeta `Retry-After` |
 
 ## 7. Limitaciones conocidas (no son bugs del servicio)

@@ -1,5 +1,7 @@
 // The request draft the wizard edits, and the pure functions derived from it.
 
+import { ORACLES } from './oracles'
+
 let nextId = 0
 const uid = () => `id${++nextId}`
 
@@ -31,12 +33,14 @@ export function newQuestion(type = 'choice', name = '') {
 
 export function emptyDraft() {
   return {
-    mode: 'custom', // 'preset' | 'custom'
+    mode: 'custom', // 'preset' | 'custom' | 'oracle'
     presetName: null,
+    oracleName: null, // 'yesno' | '8ball' in oracle mode
     presetQuestions: [], // names, in preset order
     presetSubset: [], // checked names
-    text: '',
+    text: '', // the question in oracle mode
     questions: [],
+    // Kept as is in oracle mode (never sent there), so going back to custom restores it.
     minConfidence: DEFAULT_MIN_CONFIDENCE, // low-confidence flag on by default; null = off
   }
 }
@@ -91,6 +95,9 @@ export function questionToApi(q) {
 
 /** The exact request the wizard sends: the single source for preview, send, curl and payload tab. */
 export function buildRequest(draft) {
+  if (draft.mode === 'oracle') {
+    return { method: 'POST', path: `/v1/oracle/${draft.oracleName}`, body: { question: draft.text } }
+  }
   const body = { text: draft.text }
   let path
   if (draft.mode === 'preset') {
@@ -103,6 +110,12 @@ export function buildRequest(draft) {
   }
   if (draft.minConfidence != null) body.min_confidence = draft.minConfidence
   return { method: 'POST', path, body }
+}
+
+/** Expected wall time in seconds: fixed per oracle (measured), otherwise from the option counts. */
+export function draftSeconds(draft, presets) {
+  if (draft.mode === 'oracle') return ORACLES[draft.oracleName]?.seconds ?? 5
+  return expectedSeconds(optionCounts(draft, presets))
 }
 
 /** Options each answered question has (yes/no counts as 2), from the draft and preset definitions. */

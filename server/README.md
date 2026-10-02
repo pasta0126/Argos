@@ -24,6 +24,7 @@ All `/v1/*` endpoints need `Authorization: Bearer <key>` (keys in `.env`, see be
   requests with expected-result tests, the presets, and 401/404/422/413 cases. Headless:
   `npx -y newman run postman/argos.postman_collection.json --env-var apiKey=$ARGOS_KEY`.
 - **Quick-test guide for testers** (Spanish): [`TESTING.md`](TESTING.md).
+- **Oracle:** `POST /v1/oracle/yesno` and `/v1/oracle/8ball`, question only (below).
 
 ### `POST /v1/decide`
 
@@ -130,6 +131,46 @@ Each question uses the better of two Spanish wordings tried (archived `add-decis
 design, D8; choice in `publish-all-presets` design, D1). Samples are small (3–4 "yes" texts
 per yes/no question).
 
+### Oracle
+
+Two question-only toy endpoints (tag `oracle` in Swagger, not listed by `GET /v1/presets`).
+The body is exactly `{"question": "..."}` (1–500 characters, `413` above); the question is the
+text Laya reads and the instruction is fixed in `argos_api/oracle.py`. There is no confidence
+threshold: `min_confidence` (or any other field) is a `422`, and no `low_confidence` is
+returned. Same auth, queue, `503` and content-free logging as `/v1/decide`.
+
+- `POST /v1/oracle/yesno` → `answer`, `probability` (P(yes)), `confidence`. ~1.2 s.
+- `POST /v1/oracle/8ball` → `answer` (most likely of the 20 classic Magic 8-Ball phrases in
+  Spanish, a 20-level `score` question, earliest on a tie), its `kind`, `phrases` (each with
+  `percentage`, largest-remainder rounded to 0.1 so they sum to 100) and `totals` per class
+  (10 affirmative, 5 non-committal, 5 negative). ~3.6–4.2 s.
+
+```bash
+curl -s https://argos-api.northernarchive.com/v1/oracle/8ball \
+  -H "Authorization: Bearer $ARGOS_KEY" -H 'content-type: application/json' \
+  -d '{"question": "¿Me tocará la lotería este año?"}'
+```
+
+**Callers must ask yes/no questions.** The oracle answers anything: Laya cannot tell yes/no
+questions from open ones ("¿Por qué el cielo es azul?" scored 0.79–0.89 as a yes/no
+question), so there is no check. Answers are deterministic (same question, same answer).
+Examples: [`API.md`](API.md#oráculo).
+
+Oracle evaluation (a report, not a gate), 2026-10-02, model revision `55cf4c4e`, 35 Spanish
+questions in `evals/oracle.jsonl` (30 yes/no, 5 open), both wordings in `oracle.py`:
+
+| oracle | wording | result |
+|---|---|---|
+| yes/no | **«¿La respuesta a esta pregunta es sí?»** | yes 16/30 (53 %) on yes/no questions, P(yes) median 0.52 (q1 0.34, q3 0.66); open questions yes 1/5 |
+| yes/no | «Si alguien hiciera esta pregunta, ¿la respuesta sería sí?» | yes 13/30 (43 %), median 0.41 |
+| 8-Ball | **«¿Cómo de probable es que la respuesta a esta pregunta sea afirmativa?»** | 9 of 20 phrases ever win; classes 25 affirmative / 2 non-committal / 8 negative; winning phrase median 13.1 % |
+| 8-Ball | «¿Qué probabilidad hay de que la respuesta a esta pregunta sea sí?» | 7 of 20 phrases win; 24 / 1 / 10 |
+
+Bold is the published wording (closest to an even yes/no split; most varied 8-Ball). The
+8-Ball leans affirmative, and two phrases ("Es decididamente así", "Sin lugar a dudas") take
+most affirmative wins; non-committal phrases almost never win, because the answer is the
+argmax, not Laya's expected-score `level`, which would pull every answer to the middle.
+
 ### `GET /health`
 
 Public. `200 {"status":"ok","model":"laya-multilingual"}` when ready, `503 {"status":"loading"}`
@@ -164,6 +205,7 @@ Raspberry Pi 4B, laya 0.3.22, torch 2.14.1+cpu, 3 threads, model revision `55cf4
 | Resident memory | ~2.1 GB steady, ~2.6 GB peak |
 | 1 question (warm) | ~1.1 s |
 | 3 questions (warm) | ~2.3 s |
+| Oracle yes/no · 8-Ball (20 levels) | ~1.2 s · ~3.6–4.2 s |
 | Image size | 1.6 GB |
 
 ## Configuration (`.env`, git-ignored)
@@ -214,6 +256,16 @@ It takes ~12 min. `tests/test_presets.py` checks that every label in `evals/pres
 matches a published question and that coverage holds (≥ 10 texts per question, ≥ 3 yes and
 ≥ 3 no per yesno, every choice option at least once). Lines with `"holdout": true` are not
 used for rewording; misses are only printed for the others.
+
+Oracle report (real model; rerun after changing `argos_api/oracle.py`, `laya` or the model
+revision, and update the oracle table above). It prints the share of yes answers, the P(yes)
+quartiles, and the wins per 8-Ball phrase and class; `--wording alt` asks with the alternative
+instructions, `--oracle yesno|8ball` runs one oracle. Exits 0; ~6 min:
+
+```bash
+docker run --rm --env-file .env -v $PWD/argos_api:/app/argos_api:ro -v $PWD/evals:/app/evals:ro \
+  -v argos-api_argos-hf-cache:/data/hf argos-api:latest python evals/run_oracle.py
+```
 
 ## Deploy (on void-server)
 

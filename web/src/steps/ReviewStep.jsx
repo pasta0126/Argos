@@ -1,4 +1,5 @@
-import { expectedSeconds, optionCounts } from '../lib/draft'
+import { draftSeconds, optionCounts } from '../lib/draft'
+import { ORACLES } from '../lib/oracles'
 import { formatNumber } from '../lib/answerView'
 import { PUBLIC_API_URL } from '../lib/config'
 import RunStatus from '../components/RunStatus'
@@ -7,7 +8,8 @@ import { STEPS } from '../components/Stepper'
 export default function ReviewStep({ draft, presets, request, errors, run, health, onSend, onCancel, onGoError, onErrorAction, onBack }) {
   const counts = optionCounts(draft, presets)
   const n = counts.length
-  const expected = expectedSeconds(counts)
+  const expected = draftSeconds(draft, presets)
+  const oracle = draft.mode === 'oracle' ? ORACLES[draft.oracleName] : null
   const busy = run.phase === 'running' || run.phase === 'waiting'
   return (
     <div>
@@ -24,16 +26,16 @@ export default function ReviewStep({ draft, presets, request, errors, run, healt
           </code>
         </dd>
         <dt>Modo</dt>
-        <dd>{draft.mode === 'preset' ? `Preset «${draft.presetName}»` : 'Preguntas personalizadas'}</dd>
-        <dt>Texto</dt>
+        <dd>{oracle ? oracle.title : draft.mode === 'preset' ? `Preset «${draft.presetName}»` : 'Preguntas personalizadas'}</dd>
+        <dt>{oracle ? 'Pregunta' : 'Texto'}</dt>
         <dd>{draft.text.length > 160 ? `${draft.text.slice(0, 160)}…` : draft.text || <em>vacío</em>}</dd>
         <dt>Preguntas</dt>
         <dd>
-          {n}
+          {oracle ? '1 (fija)' : n}
           {draft.mode === 'preset' && n < draft.presetQuestions.length ? ` de ${draft.presetQuestions.length}` : ''}
         </dd>
         <dt>Umbral</dt>
-        <dd>{draft.minConfidence == null ? 'sin umbral' : formatNumber(draft.minConfidence)}</dd>
+        <dd>{oracle ? 'sin umbral (el oráculo no lo usa)' : draft.minConfidence == null ? 'sin umbral' : formatNumber(draft.minConfidence)}</dd>
         <dt>Duración estimada</dt>
         <dd>≈ {expected} s si el servidor está libre</dd>
       </dl>

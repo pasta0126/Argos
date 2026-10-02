@@ -14,13 +14,17 @@ export function draftReducer(draft, action) {
         ...draft,
         mode: 'preset',
         presetName: action.name,
+        oracleName: null,
         presetQuestions: action.questions,
         presetSubset: action.questions,
       }
     case 'chooseCustom':
-      return { ...draft, mode: 'custom', presetName: null }
+      return { ...draft, mode: 'custom', presetName: null, oracleName: null }
+    case 'chooseOracle':
+      // minConfidence is left alone: oracle requests never send it, and custom gets it back.
+      return { ...draft, mode: 'oracle', oracleName: action.name, presetName: null }
     case 'customizePreset':
-      return { ...draft, mode: 'custom', presetName: null, questions: questionsFromApi(action.questions) }
+      return { ...draft, mode: 'custom', presetName: null, oracleName: null, questions: questionsFromApi(action.questions) }
     case 'toggleSubset': {
       const has = draft.presetSubset.includes(action.name)
       return { ...draft, presetSubset: has ? draft.presetSubset.filter((n) => n !== action.name) : [...draft.presetSubset, action.name] }

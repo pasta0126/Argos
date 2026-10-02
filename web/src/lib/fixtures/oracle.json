@@ -1,0 +1,32 @@
+{
+  "yesno": { "answer": true, "probability": 0.82, "confidence": 0.82, "model": "laya-multilingual", "latency_ms": 1234 },
+  "8ball": {
+    "answer": "Sin lugar a dudas",
+    "kind": "affirmative",
+    "phrases": [
+      { "phrase": "No cuentes con ello", "kind": "negative", "percentage": 3.1 },
+      { "phrase": "Mi respuesta es no", "kind": "negative", "percentage": 2.9 },
+      { "phrase": "Mis fuentes dicen que no", "kind": "negative", "percentage": 3.0 },
+      { "phrase": "Las perspectivas no son muy buenas", "kind": "negative", "percentage": 3.4 },
+      { "phrase": "Muy dudoso", "kind": "negative", "percentage": 4.2 },
+      { "phrase": "Respuesta confusa, vuelve a intentarlo", "kind": "non_committal", "percentage": 3.3 },
+      { "phrase": "Vuelve a preguntar más tarde", "kind": "non_committal", "percentage": 3.6 },
+      { "phrase": "Mejor no decírtelo ahora", "kind": "non_committal", "percentage": 3.9 },
+      { "phrase": "No se puede predecir ahora", "kind": "non_committal", "percentage": 4.4 },
+      { "phrase": "Concéntrate y vuelve a preguntar", "kind": "non_committal", "percentage": 4.1 },
+      { "phrase": "Las señales apuntan a que sí", "kind": "affirmative", "percentage": 5.8 },
+      { "phrase": "Buenas perspectivas", "kind": "affirmative", "percentage": 5.5 },
+      { "phrase": "Lo más probable", "kind": "affirmative", "percentage": 6.1 },
+      { "phrase": "Tal y como yo lo veo, sí", "kind": "affirmative", "percentage": 5.2 },
+      { "phrase": "Sí", "kind": "affirmative", "percentage": 5.4 },
+      { "phrase": "Puedes confiar en ello", "kind": "affirmative", "percentage": 5.9 },
+      { "phrase": "Sí, definitivamente", "kind": "affirmative", "percentage": 5.6 },
+      { "phrase": "Es decididamente así", "kind": "affirmative", "percentage": 5.7 },
+      { "phrase": "Sin lugar a dudas", "kind": "affirmative", "percentage": 12.7 },
+      { "phrase": "Es cierto", "kind": "affirmative", "percentage": 6.2 }
+    ],
+    "totals": { "affirmative": 64.1, "non_committal": 19.3, "negative": 16.6 },
+    "model": "laya-multilingual",
+    "latency_ms": 9120
+  }
+}

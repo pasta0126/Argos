@@ -13,14 +13,19 @@ from .auth import require_api_key
 from .config import Settings
 from .engine import DecisionEngine
 from .gate import Busy, InferenceGate
+from . import oracle
 from .presets import PRESETS
 from .presets import Preset
 from .schemas import (
     DecideRequest,
     DecideResponse,
+    EightBallResponse,
+    MAX_QUESTION_CHARS,
+    OracleRequest,
     PresetRequest,
     PresetResponse,
     limit_violation,
+    YesNoOracleResponse,
     preset_request_model,
 )
 
@@ -196,5 +201,52 @@ def create_app(settings: Settings | None = None, engine: DecisionEngine | None =
                     ],
                 )
         return await answer_preset(name, preset, body, request)
+
+    async def ask_oracle(body: OracleRequest, question, request: Request) -> dict | JSONResponse:
+        """Run one fixed oracle question with the caller's question as the text; no threshold."""
+        request.state.question_count = 1
+        if len(body.question) > MAX_QUESTION_CHARS:
+            return JSONResponse({"detail": f"question exceeds {MAX_QUESTION_CHARS} characters"}, status_code=413)
+        result = await run_decision(
+            DecideRequest(text=body.question, questions={oracle.QUESTION_NAME: question}, min_confidence=None), request
+        )
+        if isinstance(result, JSONResponse):
+            return result
+        return {"answer": result.answers[oracle.QUESTION_NAME], "model": result.model, "latency_ms": result.latency_ms}
+
+    @app.post(
+        "/v1/oracle/yesno",
+        response_model=YesNoOracleResponse,
+        summary="Oráculo sí/no",
+        description="Responde sí o no a una pregunta. Solo se envía `question` (hasta 500 caracteres); "
+        "la instrucción es fija y no hay umbral de confianza.\n\n"
+        "Responde a cualquier pregunta: haz preguntas que se contesten con sí o no, porque una "
+        "pregunta abierta también recibe un sí o un no.",
+        tags=["oracle"],
+    )
+    async def oracle_yesno(body: OracleRequest, request: Request, _client: str = Depends(require_api_key)):
+        result = await ask_oracle(body, oracle.YESNO_QUESTION, request)
+        if isinstance(result, JSONResponse):
+            return result
+        return YesNoOracleResponse(
+            **oracle.yesno_answer(result["answer"]), model=result["model"], latency_ms=result["latency_ms"]
+        )
+
+    @app.post(
+        "/v1/oracle/8ball",
+        response_model=EightBallResponse,
+        summary="Bola 8 mágica",
+        description="Responde con una de las 20 frases clásicas de la bola 8 mágica. Solo se envía "
+        "`question` (hasta 500 caracteres). Devuelve la frase ganadora (la más probable), el "
+        "porcentaje de cada frase (suman 100) y los totales afirmativo, neutro y negativo.",
+        tags=["oracle"],
+    )
+    async def oracle_8ball(body: OracleRequest, request: Request, _client: str = Depends(require_api_key)):
+        result = await ask_oracle(body, oracle.EIGHTBALL_QUESTION, request)
+        if isinstance(result, JSONResponse):
+            return result
+        return EightBallResponse(
+            **oracle.eightball_answer(result["answer"]), model=result["model"], latency_ms=result["latency_ms"]
+        )
 
     return app

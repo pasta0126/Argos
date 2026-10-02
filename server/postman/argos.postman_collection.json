@@ -745,6 +745,198 @@
       ]
     },
     {
+      "name": "Oráculo",
+      "item": [
+        {
+          "name": "Oráculo sí/no",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/oracle/yesno",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "oracle",
+                "yesno"
+              ]
+            },
+            "description": "Only the question is sent. Ask yes/no questions: an open question also gets a yes or no.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"question\": \"¿Me saldrá bien el examen de mañana?\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "const d = pm.response.json();",
+                  "pm.test('answer es booleano y coincide con probability ≥ 0.5', () => pm.expect(d.answer).to.eql(d.probability >= 0.5));",
+                  "pm.test('sin low_confidence', () => pm.expect(d).to.not.have.property('low_confidence'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Bola 8 mágica",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/oracle/8ball",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "oracle",
+                "8ball"
+              ]
+            },
+            "description": "~4 s on the Pi (20-level scale).",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"question\": \"¿Me tocará la lotería este año?\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "const d = pm.response.json();",
+                  "pm.test('20 frases', () => pm.expect(d.phrases).to.have.lengthOf(20));",
+                  "const sum = d.phrases.reduce((t, p) => t + p.percentage, 0);",
+                  "pm.test('los porcentajes suman 100', () => pm.expect(sum).to.be.within(99.9, 100.1));",
+                  "const best = Math.max(...d.phrases.map((p) => p.percentage));",
+                  "pm.test('answer es la frase más probable', () => pm.expect(d.phrases.find((p) => p.phrase === d.answer).percentage).to.eql(best));",
+                  "pm.test('totales por clase', () => pm.expect(d.totals).to.have.all.keys('affirmative', 'non_committal', 'negative'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "422 oráculo con min_confidence",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/oracle/yesno",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "oracle",
+                "yesno"
+              ]
+            },
+            "description": "The oracle has no confidence threshold.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"question\": \"¿Lloverá mañana?\",\n  \"min_confidence\": 0.8\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 422', () => pm.response.to.have.status(422));",
+                  "pm.test('nombra min_confidence', () => pm.expect(JSON.stringify(pm.response.json().detail)).to.include('min_confidence'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "413 pregunta de más de 500 caracteres",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/oracle/8ball",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "oracle",
+                "8ball"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"question\": \"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 413', () => pm.response.to.have.status(413));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
       "name": "Errores",
       "item": [
         {

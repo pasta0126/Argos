@@ -104,3 +104,27 @@ describe('validate', () => {
     expect(validate(d)).toEqual([expect.objectContaining({ step: 'questions' })])
   })
 })
+
+describe('validate, oracle mode', () => {
+  const oracle = (text, extra = {}) => ({ ...emptyDraft(), mode: 'oracle', oracleName: 'yesno', text, ...extra })
+
+  test('a question is enough', () => {
+    expect(validate(oracle('¿Lloverá mañana?'))).toEqual([])
+  })
+
+  test('500 characters pass, 501 are blocked on the text step (spec scenario)', () => {
+    expect(validate(oracle('x'.repeat(500)))).toEqual([])
+    const errors = validate(oracle('x'.repeat(501)))
+    expect(errors.map((e) => [e.step, e.field])).toEqual([['text', 'question']])
+    expect(errors[0].message).toContain('500')
+  })
+
+  test('empty question and unknown oracle', () => {
+    expect(fields(oracle('  '))).toEqual(['question'])
+    expect(fields(oracle('¿?', { oracleName: 'tarot' }))).toEqual(['oracle'])
+  })
+
+  test('the threshold is ignored', () => {
+    expect(validate(oracle('¿?', { minConfidence: 7 }))).toEqual([])
+  })
+})

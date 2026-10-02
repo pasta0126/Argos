@@ -3,6 +3,8 @@ import { curlFor } from '../lib/api'
 import { PUBLIC_API_URL } from '../lib/config'
 import AnswerCard from './AnswerCard'
 import JsonView from './JsonView'
+import { Oracle8Ball, OracleYesNo } from './OracleResult'
+import { ORACLES, oracleFromPath } from '../lib/oracles'
 
 const TABS = [
   ['visual', 'Visual'],
@@ -15,8 +17,9 @@ export default function ResultView({ run, defs, onEdit, onNew }) {
   const [tab, setTab] = useState('visual')
   const { request, response } = run
   const data = response.data
+  const oracle = oracleFromPath(request.path)
   const threshold = request.body.min_confidence ?? null
-  const lowCount = Object.values(data.answers).filter((a) => a.low_confidence).length
+  const lowCount = oracle ? 0 : Object.values(data.answers).filter((a) => a.low_confidence).length
   const endpoint = (
     <>
       <span className="method mono">{request.method}</span>
@@ -33,11 +36,15 @@ export default function ResultView({ run, defs, onEdit, onNew }) {
         <div>
           <h2>Resultado</h2>
           <div className="msg ok" role="status" style={{ margin: '6px 0 0' }}>
-            <p>
-              ✓ {Object.keys(data.answers).length} respuestas recibidas
-              {data.preset ? ` del preset «${data.preset}»` : ''}
-              {lowCount > 0 && ` · ${lowCount} con confianza baja`}
-            </p>
+            {oracle ? (
+              <p>✓ Respuesta de «{ORACLES[oracle].title}»</p>
+            ) : (
+              <p>
+                ✓ {Object.keys(data.answers).length} respuestas recibidas
+                {data.preset ? ` del preset «${data.preset}»` : ''}
+                {lowCount > 0 && ` · ${lowCount} con confianza baja`}
+              </p>
+            )}
           </div>
         </div>
         <div className="stats">
@@ -65,7 +72,9 @@ export default function ResultView({ run, defs, onEdit, onNew }) {
       </div>
 
       <div role="tabpanel">
-        {tab === 'visual' && (
+        {tab === 'visual' && oracle === 'yesno' && <OracleYesNo data={data} question={request.body.question} />}
+        {tab === 'visual' && oracle === '8ball' && <Oracle8Ball data={data} question={request.body.question} />}
+        {tab === 'visual' && !oracle && (
           <div className="answers">
             {Object.entries(data.answers).map(([name, answer]) => (
               <AnswerCard key={name} name={name} answer={answer} def={defs?.[name]} threshold={threshold} />

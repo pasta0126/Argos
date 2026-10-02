@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { buildRequest, draftFromBody, emptyDraft, expectedSeconds, freeName, newOption, newQuestion, optionCounts, questionsFromApi } from './draft'
+import { buildRequest, draftFromBody, draftSeconds, emptyDraft, expectedSeconds, freeName, newOption, newQuestion, optionCounts, questionsFromApi } from './draft'
 
 // server/examples holds valid /v1/decide bodies (Postman/tests); the editor must round-trip them.
 const EXAMPLES = Object.entries(import.meta.glob('../../../server/examples/*.json', { eager: true, import: 'default' }))
@@ -105,4 +105,26 @@ test('duration estimate follows options, close to measured times', () => {
   const triage = presetDraft('triage')
   expect(optionCounts(triage, fixture.presets)).toEqual([6, 2, 4, 2, 2])
   expect(expectedSeconds(optionCounts(triage, fixture.presets))).toBe(12)
+})
+
+describe('buildRequest, oracle mode', () => {
+  const oracle = (name, extra = {}) => ({ ...emptyDraft(), mode: 'oracle', oracleName: name, text: '¿Lloverá mañana?', ...extra })
+
+  test('yes/no payload is exactly the question (spec scenario)', () => {
+    expect(buildRequest(oracle('yesno'))).toEqual({ method: 'POST', path: '/v1/oracle/yesno', body: { question: '¿Lloverá mañana?' } })
+  })
+
+  test('8-Ball targets its endpoint', () => {
+    expect(buildRequest(oracle('8ball')).path).toBe('/v1/oracle/8ball')
+  })
+
+  test('never sends min_confidence, even when the flag is set', () => {
+    expect(buildRequest(oracle('yesno', { minConfidence: 0.8 })).body).toEqual({ question: '¿Lloverá mañana?' })
+  })
+
+  test('fixed expected duration per oracle instead of the k² formula', () => {
+    expect(draftSeconds(oracle('yesno'))).toBe(2)
+    expect(draftSeconds(oracle('8ball'))).toBe(5)
+    expect(expectedSeconds([20])).toBeGreaterThan(30)
+  })
 })

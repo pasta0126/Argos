@@ -1,3 +1,5 @@
+import { ORACLES } from '../lib/oracles'
+
 export default function ModeStep({ draft, presets, dispatch, onLoaded }) {
   const presetEntries = Object.entries(presets ?? {})
   return (
@@ -43,6 +45,33 @@ export default function ModeStep({ draft, presets, dispatch, onLoaded }) {
           </button>
         ))}
       </div>
+
+      <section className="oracle oracle-group" aria-labelledby="oracle-title">
+        <h3 id="oracle-title">
+          <span aria-hidden="true">✦</span> Oráculo
+        </h3>
+        <p>Solo escribes una pregunta: la instrucción es fija y el oráculo siempre responde.</p>
+        <div className="choices grid-2">
+          {Object.entries(ORACLES).map(([name, o]) => (
+            <button
+              key={name}
+              type="button"
+              className="choice-card oracle-card"
+              aria-pressed={draft.mode === 'oracle' && draft.oracleName === name}
+              onClick={() => {
+                dispatch({ type: 'chooseOracle', name })
+                onLoaded(`${o.title} seleccionado`)
+              }}
+            >
+              <strong>
+                <span aria-hidden="true">{name === '8ball' ? '➑' : '☯'}</span> {o.title}
+              </strong>
+              <small>{o.description}</small>
+              <div className="meta">POST /v1/oracle/{name}</div>
+            </button>
+          ))}
+        </div>
+      </section>
     </div>
   )
 }

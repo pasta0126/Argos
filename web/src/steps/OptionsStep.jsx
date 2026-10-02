@@ -2,6 +2,24 @@ import { formatNumber } from '../lib/answerView'
 import { DEFAULT_MIN_CONFIDENCE } from '../lib/draft'
 
 export default function OptionsStep({ draft, dispatch }) {
+  if (draft.mode === 'oracle') {
+    return (
+      <div>
+        <div className="step-head">
+          <h2>Opciones</h2>
+          <p>Ajustes opcionales de la petición.</p>
+        </div>
+        <label className="check disabled" style={{ fontWeight: 600 }}>
+          <input type="checkbox" checked={false} disabled readOnly />
+          Marcar las respuestas con confianza baja
+        </label>
+        <p className="hint">
+          El oráculo no tiene umbral de confianza: siempre responde y no acepta <code>min_confidence</code>. Tu ajuste se
+          conserva para cuando vuelvas a una petición personalizada o a un preset.
+        </p>
+      </div>
+    )
+  }
   const on = draft.minConfidence != null
   const set = (v) => dispatch({ type: 'patch', patch: { minConfidence: v } })
   return (
