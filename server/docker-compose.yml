@@ -7,7 +7,7 @@ services:
     container_name: argos-api
     restart: unless-stopped
     env_file: .env
-    mem_limit: 3g
+    mem_limit: 3584m
     volumes:
       - argos-hf-cache:/data/hf
     networks:

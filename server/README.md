@@ -220,7 +220,7 @@ disables CORS) lists the browser origins allowed to
 call the API cross-origin — the web wizard; it does not replace the API key.
 
 **Memory limit caveat:** the host kernel boots with `cgroup_disable=memory`, so the
-compose `mem_limit: 3g` is currently *not enforced* (Docker warns "No memory limit
+compose `mem_limit: 3584m` is currently *not enforced* (Docker warns "No memory limit
 support"). It takes effect once memory cgroups are enabled on the host (infra concern).
 
 ## Development
