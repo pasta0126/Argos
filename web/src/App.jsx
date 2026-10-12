@@ -6,6 +6,7 @@ import ResultView from './components/ResultView'
 import Stepper, { STEPS } from './components/Stepper'
 import { useHealth } from './hooks'
 import { explainError, request as apiRequest, requestWithRetry } from './lib/api'
+import { LAYA_URL, LAYA_VERSION } from './lib/config'
 import { buildRequest, emptyDraft } from './lib/draft'
 import { forgetKey, loadKey, maskKey, saveKey } from './lib/keyStore'
 import { draftReducer } from './lib/reducer'
@@ -319,6 +320,14 @@ export default function App() {
           )}
         </div>
       </main>
+
+      <footer className="site-footer">
+        Basado en{' '}
+        <a href={LAYA_URL} target="_blank" rel="noopener noreferrer">
+          Laya
+        </a>{' '}
+        <span className="mono">v{LAYA_VERSION}</span>
+      </footer>
 
       {toast && (
         <div className="toast" role="status">
